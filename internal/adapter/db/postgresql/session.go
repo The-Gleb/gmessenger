@@ -2,12 +2,15 @@ package postgresql
 
 import (
 	"context"
+	stdErrors "errors"
 
 	"github.com/The-Gleb/gmessenger/internal/adapter/db/sqlc"
 	"github.com/The-Gleb/gmessenger/internal/domain/entity"
 	"github.com/The-Gleb/gmessenger/internal/errors"
 	"github.com/The-Gleb/gmessenger/pkg/client/postgresql"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -25,10 +28,11 @@ func (ss *sessionStorage) GetByToken(ctx context.Context, token string) (entity.
 
 	s, err := ss.sqlc.GetSessionByToken(ctx, token)
 	switch err {
-	case pgx.ErrNoRows:
-		return entity.Session{}, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetByToken]: session not found")
 	default:
 		return entity.Session{}, errors.NewDomainError(errors.ErrDB, "[storage.GetByToken]: ")
+	case pgx.ErrNoRows:
+		return entity.Session{}, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetByToken]: session not found")
+
 	case nil:
 		return entity.Session{
 			Token:     s.Token,
@@ -53,7 +57,11 @@ func (ss *sessionStorage) Create(ctx context.Context, session entity.Session) er
 		},
 	})
 	if err != nil {
-
+		var pgErr *pgconn.PgError
+		if stdErrors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return errors.NewDomainError(errors.ErrNotUniqueToken, "[storage.Create]: not unique token")
+		}
+		return errors.NewDomainError(errors.ErrDB, "[storage.Create]: ")
 	}
 
 	return nil
@@ -62,7 +70,9 @@ func (ss *sessionStorage) Create(ctx context.Context, session entity.Session) er
 func (ss *sessionStorage) Delete(ctx context.Context, token string) error {
 	err := ss.sqlc.DeleteSession(ctx, token)
 	if err != nil {
-
+		if stdErrors.Is(err, pgx.ErrNoRows) {
+			return errors.NewDomainError(errors.ErrNoDataFound, "token not found")
+		}
 	}
 
 	return nil

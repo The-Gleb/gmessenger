@@ -9,6 +9,7 @@ import (
 	"github.com/The-Gleb/gmessenger/internal/controller/http/dto"
 	"github.com/The-Gleb/gmessenger/internal/domain/entity"
 	register_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/register"
+	"github.com/The-Gleb/gmessenger/internal/errors"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -40,6 +41,8 @@ func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&d)
 	if err != nil {
 		slog.Error("[handler.Register]: error parsing json to dto", "error", err)
+		http.Error(rw, "[handler.Register]: error parsing json to dto", http.StatusInternalServerError)
+		return
 	}
 
 	slog.Debug("RegisterUserDTO", "struct", d)
@@ -50,11 +53,20 @@ func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 		Password: d.Password,
 	})
 	if err != nil {
-		slog.Error("[handler.Register]:", "error", err)
+		switch errors.Code(err) {
+		case errors.ErrDBLoginAlredyExists:
+			http.Error(rw, err.Error(), http.StatusConflict)
+			return
+		default:
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 	b, err := json.Marshal(s)
 	if err != nil {
 		slog.Error("[handler.Register]: error unmarshalling json", "error", err)
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
 	}
 	rw.Write(b)
 

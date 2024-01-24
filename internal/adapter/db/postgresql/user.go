@@ -3,10 +3,13 @@ package postgresql
 import (
 	"context"
 
+	stdErrors "errors"
+
 	"github.com/The-Gleb/gmessenger/internal/adapter/db/sqlc"
 	"github.com/The-Gleb/gmessenger/internal/domain/entity"
 	"github.com/The-Gleb/gmessenger/internal/errors"
 	"github.com/The-Gleb/gmessenger/pkg/client/postgresql"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -34,10 +37,12 @@ func NewUserStorage(client postgresql.Client) *userStorage {
 func (us *userStorage) GetByLogin(ctx context.Context, login string) (entity.User, error) {
 	user, err := us.sqlc.GetUser(ctx, login)
 	switch err {
-	case pgx.ErrNoRows:
-		return entity.User{}, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetByLogin]: user not found")
 	default:
 		return entity.User{}, errors.NewDomainError(errors.ErrDB, "[storage.GetByLogin]")
+
+	case pgx.ErrNoRows:
+		return entity.User{}, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetByLogin]: user not found")
+
 	case nil:
 		return entity.User{
 			UserName: user.Username.String,
@@ -49,16 +54,6 @@ func (us *userStorage) GetByLogin(ctx context.Context, login string) (entity.Use
 }
 
 func (us *userStorage) Create(ctx context.Context, user entity.User) (entity.User, error) {
-
-	_, err := us.sqlc.GetUser(ctx, user.Login)
-	switch err {
-	case pgx.ErrNoRows:
-		break
-	case nil:
-		return entity.User{}, errors.NewDomainError(errors.ErrDBLoginAlredyExists, "[storage.Create]:")
-	default:
-		return entity.User{}, errors.NewDomainError(errors.ErrDB, "[storage.Create]")
-	}
 
 	params := sqlc.CreateUserParams{
 		Username: pgtype.Text{
@@ -73,6 +68,11 @@ func (us *userStorage) Create(ctx context.Context, user entity.User) (entity.Use
 	}
 	sqlcUser, err := us.sqlc.CreateUser(ctx, params)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if stdErrors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return entity.User{}, errors.NewDomainError(errors.ErrDBLoginAlredyExists, "[storage.Create]:")
+		}
+
 		return entity.User{}, errors.NewDomainError(errors.ErrDB, "[storage.Create]")
 	}
 

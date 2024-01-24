@@ -15,6 +15,7 @@ const (
 	ErrNoDataFound            ErrorCode = "no data found"
 	ErrNotUniqueToken         ErrorCode = "session token already exists"
 	ErrDB                     ErrorCode = "some error in storage layer"
+	ErrSessionExpired         ErrorCode = "session token is expired"
 )
 
 type domainError struct {
@@ -24,7 +25,7 @@ type domainError struct {
 }
 
 func (e domainError) Error() string {
-	return fmt.Sprintf("%s: %s", e.errorCode, e.error.Error())
+	return fmt.Sprintf("%s: %s", e.error.Error(), e.errorCode)
 }
 
 func Unwrap(err error) error {

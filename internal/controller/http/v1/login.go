@@ -9,6 +9,7 @@ import (
 	"github.com/The-Gleb/gmessenger/internal/controller/http/dto"
 	"github.com/The-Gleb/gmessenger/internal/domain/entity"
 	login_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/login"
+	"github.com/The-Gleb/gmessenger/internal/errors"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -39,7 +40,9 @@ func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&d)
 	if err != nil {
-		// TODO
+		slog.Error("[handler.Register]: error parsing json to dto", "error", err)
+		http.Error(rw, "[handler.Register]: error parsing json to dto", http.StatusBadRequest)
+		return
 	}
 
 	slog.Debug("LoginDTO", "struct", d)
@@ -49,11 +52,20 @@ func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 		Password: d.Password,
 	})
 	if err != nil {
-		// TODO
+		switch errors.Code(err) {
+		case errors.ErrUCWrongLoginOrPassword:
+			http.Error(rw, err.Error(), http.StatusUnauthorized)
+			return
+		default:
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	b, err := json.Marshal(s)
 	if err != nil {
-		// TODO
+		slog.Error("[handler.Register]: error marshalling json", "error", err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	rw.Write(b)
 

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/The-Gleb/gmessenger/internal/domain/entity"
+	"github.com/The-Gleb/gmessenger/internal/errors"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -35,12 +36,15 @@ func (uc *loginUsecase) Login(ctx context.Context, loginDTO LoginDTO) (entity.Se
 
 	password, err := uc.userService.GetPassword(ctx, loginDTO.Login)
 	if err != nil {
+		if errors.Code(err) == errors.ErrNoDataFound {
+			return entity.Session{}, errors.NewDomainError(errors.ErrUCWrongLoginOrPassword, "[usecase.Login]:")
+		}
 		return entity.Session{}, fmt.Errorf("[usecase.Login]: %w", err)
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(password), []byte(loginDTO.Password))
 	if err != nil {
-		return entity.Session{}, err // TODO
+		return entity.Session{}, errors.NewDomainError(errors.ErrUCWrongLoginOrPassword, "[usecase.Login]:")
 	}
 
 	newSession := entity.Session{
