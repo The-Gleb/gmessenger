@@ -11,13 +11,15 @@ import (
 )
 
 type SessionService interface {
+	Create(ctx context.Context, session entity.Session) error
 	GetLoginByToken(ctx context.Context, token string) (entity.Session, error)
-	Create(ctx context.Context, Session entity.Session) error
+	Delete(ctx context.Context, token string) error
 }
 
 type UserService interface {
-	Get(ctx context.Context, login string) (entity.User, error)
 	Create(ctx context.Context, user entity.User) (entity.User, error)
+	GetByLogin(ctx context.Context, login string) (entity.User, error)
+	GetPassword(ctx context.Context, login string) (string, error)
 }
 
 type registerUsecase struct {
@@ -52,9 +54,9 @@ func (r *registerUsecase) Register(ctx context.Context, registerUserDTO Register
 	}
 
 	newSession := entity.Session{
-		UserName: user.Login,
-		Token:    uuid.NewString(),
-		Expiry:   time.Now().Add(24 * time.Hour), // TODO config
+		UserLogin: user.Login,
+		Token:     uuid.NewString(),
+		Expiry:    time.Now().Add(24 * time.Hour), // TODO config
 	}
 
 	err = r.sessionService.Create(ctx, newSession)

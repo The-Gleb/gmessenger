@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/The-Gleb/gmessenger/internal/controller/http/dto"
@@ -34,11 +35,27 @@ func (h *registerHandler) AddToRouter(r *chi.Mux) {
 func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 
 	var d dto.RegisterUserDTO
-	r.Body.Close()
+	defer r.Body.Close()
 
 	err := json.NewDecoder(r.Body).Decode(&d)
 	if err != nil {
-		// TODO
+		slog.Error("[handler.Register]: error parsing json to dto", "error", err)
 	}
+
+	slog.Debug("RegisterUserDTO", "struct", d)
+
+	s, err := h.usecase.Register(r.Context(), register_usecase.RegisterUserDTO{
+		UserName: d.UserName,
+		Login:    d.Login,
+		Password: d.Password,
+	})
+	if err != nil {
+		slog.Error("[handler.Register]:", "error", err)
+	}
+	b, err := json.Marshal(s)
+	if err != nil {
+		slog.Error("[handler.Register]: error unmarshalling json", "error", err)
+	}
+	rw.Write(b)
 
 }

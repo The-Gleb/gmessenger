@@ -3,11 +3,12 @@ package v1
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/The-Gleb/gmessenger/internal/controller/http/dto"
 	"github.com/The-Gleb/gmessenger/internal/domain/entity"
-	register_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/register"
+	login_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/login"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -16,7 +17,7 @@ const (
 )
 
 type LoginUsecase interface {
-	login(ctx context.Context, usecaseDTO register_usecase.RegisterUserDTO) (entity.Session, error)
+	Login(ctx context.Context, usecaseDTO login_usecase.LoginDTO) (entity.Session, error)
 }
 
 type loginHandler struct {
@@ -34,11 +35,26 @@ func (h *loginHandler) AddToRouter(r *chi.Mux) {
 func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 
 	var d dto.LoginDTO
-	r.Body.Close()
+	defer r.Body.Close()
 
 	err := json.NewDecoder(r.Body).Decode(&d)
 	if err != nil {
 		// TODO
 	}
+
+	slog.Debug("LoginDTO", "struct", d)
+
+	s, err := h.usecase.Login(r.Context(), login_usecase.LoginDTO{
+		Login:    d.Login,
+		Password: d.Password,
+	})
+	if err != nil {
+		// TODO
+	}
+	b, err := json.Marshal(s)
+	if err != nil {
+		// TODO
+	}
+	rw.Write(b)
 
 }

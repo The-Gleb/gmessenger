@@ -11,7 +11,7 @@ import (
 
 type SessionStorage interface {
 	Create(ctx context.Context, session entity.Session) error
-	GetLoginByToken(ctx context.Context, token string) (entity.Session, error)
+	GetByToken(ctx context.Context, token string) (entity.Session, error)
 	Delete(ctx context.Context, token string) error
 }
 
@@ -25,7 +25,7 @@ func NewSessionService(s SessionStorage) *SessionService {
 
 func (ss *SessionService) GetLoginByToken(ctx context.Context, token string) (entity.Session, error) {
 
-	session, err := ss.repo.GetLoginByToken(ctx, token)
+	session, err := ss.repo.GetByToken(ctx, token)
 	if err != nil {
 		return entity.Session{}, err
 	}
@@ -47,6 +47,14 @@ func (ss *SessionService) Create(ctx context.Context, session entity.Session) er
 			return fmt.Errorf("[Register]: %w", err)
 		}
 		break
+	}
+	return nil
+}
+
+func (ss *SessionService) Delete(ctx context.Context, token string) error {
+	err := ss.repo.Delete(ctx, token)
+	if err != nil {
+
 	}
 	return nil
 }

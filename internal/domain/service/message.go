@@ -8,8 +8,8 @@ import (
 
 type MessageStorage interface {
 	Create(ctx context.Context, msg entity.Message) (entity.Message, error)
-	GetByID(ctx context.Context, id string) (entity.Message, error)
-	GetAll(ctx context.Context, senderLogin, receiverLogin string) ([]entity.Message, error)
+	GetByID(ctx context.Context, id int64) (entity.Message, error)
+	GetByUsers(ctx context.Context, senderLogin, receiverLogin string) ([]entity.Message, error)
 	UpdateStatus(ctx context.Context, msgID, status string) (entity.Message, error)
 }
 
@@ -21,7 +21,7 @@ func NewMessageService(s MessageStorage) *MessageService {
 	return &MessageService{repo: s}
 }
 
-func (ss *MessageService) GetByID(ctx context.Context, msgID string) (entity.Message, error) {
+func (ss *MessageService) GetByID(ctx context.Context, msgID int64) (entity.Message, error) {
 	return ss.repo.GetByID(ctx, msgID)
 }
 
@@ -30,7 +30,7 @@ func (ms *MessageService) Create(ctx context.Context, msg entity.Message) (entit
 }
 
 func (ms *MessageService) GetAll(ctx context.Context, sender, receiver string) ([]entity.Message, error) {
-	return ms.repo.GetAll(ctx, sender, receiver)
+	return ms.repo.GetByUsers(ctx, sender, receiver)
 }
 
 func (ms *MessageService) UpdateStatus(ctx context.Context, msgID, status string) (entity.Message, error) {

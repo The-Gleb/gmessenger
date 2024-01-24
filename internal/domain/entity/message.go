@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type Message struct {
-	ID        string
+	ID        int64
 	Sender    string
 	Receiver  string
 	Text      string
