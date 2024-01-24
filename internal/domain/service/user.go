@@ -10,7 +10,7 @@ type UserStorage interface {
 	Create(ctx context.Context, user entity.User) (entity.User, error)
 	GetByLogin(ctx context.Context, login string) (entity.User, error)
 	GetPassword(ctx context.Context, login string) (string, error)
-	// GetAll(ctx context.Context) ([]entity.User, error)
+	GetAllUsernames(ctx context.Context) ([]string, error)
 }
 
 type UserService struct {
@@ -33,6 +33,6 @@ func (us *UserService) GetPassword(ctx context.Context, login string) (string, e
 	return us.repo.GetPassword(ctx, login)
 }
 
-// func (us *UserService) GetAll(ctx context.Context) ([]entity.User, error) {
-// 	return us.repo.GetAll(ctx)
-// }
+func (us *UserService) GetAllUsernames(ctx context.Context) ([]string, error) {
+	return us.repo.GetAllUsernames(ctx)
+}

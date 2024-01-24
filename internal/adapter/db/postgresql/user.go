@@ -95,3 +95,23 @@ func (us *userStorage) GetPassword(ctx context.Context, login string) (string, e
 	}
 
 }
+
+func (us *userStorage) GetAllUsernames(ctx context.Context) ([]string, error) {
+	sqlcNames, err := us.sqlc.GetAllUsernames(ctx)
+	switch err {
+	// case pgx.ErrNoRows:
+	// 	return "", errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetPassworc]: user not found")
+	// case nil:
+	// 	return password.String, nil
+	// default:
+	// 	return "", errors.NewDomainError(errors.ErrDB, "[storage.GetByLogin]")
+	}
+
+	usernames := make([]string, len(sqlcNames))
+
+	for i, sqlcName := range sqlcNames {
+		usernames[i] = sqlcName.String
+	}
+
+	return usernames, nil
+}

@@ -8,13 +8,13 @@ import (
 )
 
 type Websockets struct {
-	conns map[string]*websocket.Conn
+	conns map[string]map[string]*websocket.Conn
 	mu    sync.RWMutex
 }
 
-func (w *Websockets) Get(user string) (*websocket.Conn, error) {
+func (w *Websockets) Get(user, sessionToken string) (*websocket.Conn, error) {
 	w.mu.RLock()
-	conn, ok := w.conns[user]
+	conn, ok := w.conns[user][sessionToken]
 	w.mu.RUnlock()
 	if !ok {
 		return nil, errors.New("user doesn`t have a ws conn")
@@ -23,8 +23,8 @@ func (w *Websockets) Get(user string) (*websocket.Conn, error) {
 	return conn, nil
 }
 
-func (w *Websockets) Add(user string, conn *websocket.Conn) {
+func (w *Websockets) Add(user, sessionToken string, conn *websocket.Conn) {
 	w.mu.Lock()
-	w.conns[user] = conn
+	w.conns[user][sessionToken] = conn
 	w.mu.Unlock()
 }

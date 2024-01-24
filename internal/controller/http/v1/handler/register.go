@@ -22,7 +22,8 @@ type RegisterUsecase interface {
 }
 
 type registerHandler struct {
-	usecase RegisterUsecase
+	usecase     RegisterUsecase
+	middlewares []func(http.Handler) http.Handler
 }
 
 func NewRegisterHandler(usecase RegisterUsecase) *registerHandler {
@@ -30,7 +31,19 @@ func NewRegisterHandler(usecase RegisterUsecase) *registerHandler {
 }
 
 func (h *registerHandler) AddToRouter(r *chi.Mux) {
-	r.Post(registerURL, h.Register)
+	r.Route(registerURL, func(r chi.Router) {
+		r.Use(h.middlewares...)
+		r.Post("/", h.Register)
+		// r.Route(registerURL, func(r chi.Router) {
+
+		// })
+	})
+
+}
+
+func (h *registerHandler) Middlewares(md ...func(http.Handler) http.Handler) *registerHandler {
+	h.middlewares = append(h.middlewares, md...)
+	return h
 }
 
 func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
@@ -62,12 +75,21 @@ func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	b, err := json.Marshal(s)
-	if err != nil {
-		slog.Error("[handler.Register]: error unmarshalling json", "error", err)
-		http.Error(rw, err.Error(), http.StatusBadRequest)
-		return
+
+	c := http.Cookie{
+		Name:    "sessionToken",
+		Value:   s.Token,
+		Expires: s.Expiry,
 	}
-	rw.Write(b)
+
+	http.SetCookie(rw, &c)
+
+	// b, err := json.Marshal(s)
+	// if err != nil {
+	// 	slog.Error("[handler.Register]: error unmarshalling json", "error", err)
+	// 	http.Error(rw, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+	// rw.Write(b)
 
 }

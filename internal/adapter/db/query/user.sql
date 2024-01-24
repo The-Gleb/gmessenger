@@ -12,3 +12,6 @@ WHERE login = $1;
 -- name: GetPassword :one
 SELECT password FROM users
 WHERE login = $1;
+
+-- name: GetAllUsernames :many
+SELECT username FROM users;

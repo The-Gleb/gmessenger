@@ -11,8 +11,12 @@ import (
 
 	storage "github.com/The-Gleb/gmessenger/internal/adapter/db/postgresql"
 	"github.com/The-Gleb/gmessenger/internal/config"
-	v1 "github.com/The-Gleb/gmessenger/internal/controller/http/v1"
+	handlers "github.com/The-Gleb/gmessenger/internal/controller/http/v1/handler"
+	middlewares "github.com/The-Gleb/gmessenger/internal/controller/http/v1/middleware"
+
 	"github.com/The-Gleb/gmessenger/internal/domain/service"
+	auth_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/auth"
+	chats_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/chats"
 	login_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/login"
 	register_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/register"
 	"github.com/The-Gleb/gmessenger/internal/logger"
@@ -39,14 +43,19 @@ func main() {
 
 	loginUsecase := login_usecase.NewLoginUsecase(userService, sessionService)
 	registerUsecase := register_usecase.NewRegisterUsecase(userService, sessionService)
+	authUsecase := auth_usecase.NewAuthUsecase(sessionService)
+	chatsUsecase := chats_usecase.NewChatsUsecase(userService, sessionService)
 
-	loginHandler := v1.NewLoginHandler(loginUsecase)
-	registerHandler := v1.NewRegisterHandler(registerUsecase)
+	authMiddleWare := middlewares.NewAuthMiddleware(authUsecase)
+	loginHandler := handlers.NewLoginHandler(loginUsecase)
+	registerHandler := handlers.NewRegisterHandler(registerUsecase)
+	chatsHandler := handlers.NewChatsHandler(chatsUsecase)
 
 	r := chi.NewRouter()
 
 	loginHandler.AddToRouter(r)
 	registerHandler.AddToRouter(r)
+	chatsHandler.Middlewares(authMiddleWare.Do).AddToRouter(r)
 
 	s := http.Server{
 		Addr:    cfg.RunAddress,

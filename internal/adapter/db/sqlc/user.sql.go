@@ -32,6 +32,30 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const getAllUsernames = `-- name: GetAllUsernames :many
+SELECT username FROM users
+`
+
+func (q *Queries) GetAllUsernames(ctx context.Context) ([]pgtype.Text, error) {
+	rows, err := q.db.Query(ctx, getAllUsernames)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.Text
+	for rows.Next() {
+		var username pgtype.Text
+		if err := rows.Scan(&username); err != nil {
+			return nil, err
+		}
+		items = append(items, username)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPassword = `-- name: GetPassword :one
 SELECT password FROM users
 WHERE login = $1

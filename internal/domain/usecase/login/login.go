@@ -21,6 +21,7 @@ type UserService interface {
 	Create(ctx context.Context, user entity.User) (entity.User, error)
 	GetByLogin(ctx context.Context, login string) (entity.User, error)
 	GetPassword(ctx context.Context, login string) (string, error)
+	GetAllUsernames(ctx context.Context) ([]string, error)
 }
 
 type loginUsecase struct {
