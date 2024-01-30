@@ -5,6 +5,7 @@ type Chat struct {
 	ID          int64
 	Name        string
 	LastMessage string
+	Unread      int
 }
 
 type ChatView struct {
@@ -12,4 +13,5 @@ type ChatView struct {
 	ID          int64
 	Name        string
 	LastMessage string
+	Unread      int
 }

@@ -3,6 +3,7 @@ package postgresql
 import (
 	"context"
 	stdErrors "errors"
+	"log/slog"
 
 	"github.com/The-Gleb/gmessenger/internal/adapter/db/sqlc"
 	"github.com/The-Gleb/gmessenger/internal/domain/entity"
@@ -29,8 +30,10 @@ func (ss *sessionStorage) GetByToken(ctx context.Context, token string) (entity.
 	s, err := ss.sqlc.GetSessionByToken(ctx, token)
 	switch err {
 	default:
+		slog.Error(err.Error())
 		return entity.Session{}, errors.NewDomainError(errors.ErrDB, "[storage.GetByToken]: ")
 	case pgx.ErrNoRows:
+		slog.Error(err.Error())
 		return entity.Session{}, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetByToken]: session not found")
 
 	case nil:
@@ -57,6 +60,7 @@ func (ss *sessionStorage) Create(ctx context.Context, session entity.Session) er
 		},
 	})
 	if err != nil {
+		slog.Error(err.Error())
 		var pgErr *pgconn.PgError
 		if stdErrors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
 			return errors.NewDomainError(errors.ErrNotUniqueToken, "[storage.Create]: not unique token")

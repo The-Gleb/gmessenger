@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"context"
+	"log/slog"
 
 	stdErrors "errors"
 
@@ -106,7 +107,7 @@ func (us *userStorage) GetAllUsernames(ctx context.Context) ([]string, error) {
 	// default:
 	// 	return "", errors.NewDomainError(errors.ErrDB, "[storage.GetByLogin]")
 	}
-
+	slog.Debug("got names from db", "struct", sqlcNames)
 	usernames := make([]string, len(sqlcNames))
 
 	for i, sqlcName := range sqlcNames {

@@ -68,7 +68,8 @@ func (q *Queries) GetMessageByID(ctx context.Context, id int64) (Message, error)
 
 const getMessagesByUsers = `-- name: GetMessagesByUsers :many
 SELECT id, sender, receiver, text, status, created_at FROM messages
-WHERE sender = $1 AND receiver = $2
+WHERE (sender = $1 AND receiver = $2)
+OR (sender = $2 AND receiver = $1)
 `
 
 type GetMessagesByUsersParams struct {

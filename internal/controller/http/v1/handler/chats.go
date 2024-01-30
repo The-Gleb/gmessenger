@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/The-Gleb/gmessenger/internal/domain/entity"
@@ -44,6 +45,7 @@ func (h *chatsHandler) Middlewares(md ...func(http.Handler) http.Handler) *chats
 }
 
 func (h *chatsHandler) ShowChats(rw http.ResponseWriter, r *http.Request) {
+	slog.Debug("in chat handler")
 
 	login, ok := r.Context().Value("userLogin").(string)
 	if !ok {
@@ -60,6 +62,9 @@ func (h *chatsHandler) ShowChats(rw http.ResponseWriter, r *http.Request) {
 	if err != nil {
 
 	}
+
+	token, ok := r.Context().Value("token").(string)
+	slog.Info(token)
 
 	rw.Write([]byte(fmt.Sprintf("chats:\n%s\n. user login:%s", string(b), login)))
 

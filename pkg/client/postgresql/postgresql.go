@@ -10,6 +10,7 @@ import (
 	"github.com/The-Gleb/gmessenger/pkg/utils/retry"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Client interface {
@@ -19,13 +20,13 @@ type Client interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
-func NewClient(ctx context.Context, maxAttempts int, sc config.Database) (conn *pgx.Conn, err error) {
+func NewClient(ctx context.Context, maxAttempts int, sc config.Database) (pool *pgxpool.Pool, err error) {
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", sc.Username, sc.Password, sc.Host, sc.Port, sc.DbName)
 	err = retry.DoWithTries(func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
-		conn, err = pgx.Connect(ctx, dsn)
+		pool, err = pgxpool.New(ctx, dsn)
 		if err != nil {
 			return err
 		}
@@ -36,5 +37,5 @@ func NewClient(ctx context.Context, maxAttempts int, sc config.Database) (conn *
 		log.Fatal("error do with tries postgresql")
 	}
 
-	return conn, nil
+	return pool, nil
 }

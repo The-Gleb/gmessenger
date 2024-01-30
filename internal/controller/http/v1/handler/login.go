@@ -78,6 +78,13 @@ func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 		Value:   s.Token,
 		Expires: s.Expiry,
 	}
+	slog.Debug("set cookie ", "value", c.Value)
+	b, err := json.Marshal(c)
+	if err != nil {
+
+	}
+
+	rw.Write(b)
 
 	http.SetCookie(rw, &c)
 

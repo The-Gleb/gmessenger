@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/The-Gleb/gmessenger/internal/adapter/db/sqlc"
 	"github.com/The-Gleb/gmessenger/internal/domain/entity"
@@ -13,8 +14,8 @@ type messageStorage struct {
 	sqlc *sqlc.Queries
 }
 
-func NewMessageStorage(client postgresql.Client) *sessionStorage {
-	return &sessionStorage{
+func NewMessageStorage(client postgresql.Client) *messageStorage {
+	return &messageStorage{
 		sqlc: sqlc.New(client),
 	}
 }
@@ -62,7 +63,7 @@ func (ms *messageStorage) Create(ctx context.Context, msg entity.Message) (entit
 		},
 	})
 	if err != nil {
-
+		slog.Error("couldn`t add new message to db", "error", err)
 	}
 
 	return entity.Message{
