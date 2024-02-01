@@ -298,7 +298,7 @@
         function getDialogMessages(token, receiver) {
             document.cookie = "sessionToken=" + (token || "") + "; path=/";
             fetch("dialog/"+ receiver, {
-                method: 'post',
+                method: 'get',
                 mode: 'cors',
             })
             .then(response => response.json())

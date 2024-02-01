@@ -28,8 +28,8 @@ type NewDialogMessageEvent struct {
 }
 
 type UpdateMessageStatusEvent struct {
-	MessageID int64  `json:"message_id"`
-	Status    string `json:"status"`
+	ID     int64  `json:"id"`
+	Status string `json:"status"`
 }
 
 // type DialogNotificatiohnEvent struct {
@@ -37,5 +37,11 @@ type UpdateMessageStatusEvent struct {
 // }
 
 type UserActivityEvent struct {
-	UserLogin string
+	UserLogin string `json:"user_login"`
+}
+
+type UpdateUserStatusEvent struct {
+	UserLogin string    `json:"user_login"`
+	IsOnline  bool      `json:"is_online"`
+	LastSeen  time.Time `json:"last_seen,omitempty"`
 }

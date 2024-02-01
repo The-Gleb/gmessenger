@@ -34,9 +34,6 @@ func (h *loginHandler) AddToRouter(r *chi.Mux) {
 	r.Route(loginURL, func(r chi.Router) {
 		r.Use(h.middlewares...)
 		r.Post("/", h.Login)
-		// r.Route(registerURL, func(r chi.Router) {
-
-		// })
 	})
 }
 

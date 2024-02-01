@@ -119,8 +119,8 @@ func (ds *dialogService) SendNewMessage(event *entity.Event, c *Client) error {
 	}
 
 	updateStatusEvent := entity.UpdateMessageStatusEvent{
-		MessageID: messageToSend.ID,
-		Status:    entity.SENT,
+		ID:     messageToSend.ID,
+		Status: entity.SENT,
 	}
 	ds.mu.RUnlock()
 	// mb lock mutex

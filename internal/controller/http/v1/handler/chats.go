@@ -32,9 +32,6 @@ func (h *chatsHandler) AddToRouter(r *chi.Mux) {
 	r.Route(chatsURL, func(r chi.Router) {
 		r.Use(h.middlewares...)
 		r.Post("/", h.ShowChats)
-		// r.Route(registerURL, func(r chi.Router) {
-
-		// })
 	})
 
 }

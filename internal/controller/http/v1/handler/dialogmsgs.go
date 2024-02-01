@@ -30,22 +30,17 @@ func NewDialogMsgsHandler(usecase DialogMsgsUsecase) *dialogMsgsHandler {
 
 func (h *dialogMsgsHandler) AddToRouter(r *chi.Mux) {
 
-	// r.Route(dialogURL, func(r chi.Router) {
+	r.Route(dialogMsgsURL, func(r chi.Router) {
+		r.Use(h.middlewares...)
+		r.Get("/", h.ServeHTTP)
+	})
 
-	// 	r.Use(h.middlewares...)
-
-	// })
-
-	var handler http.Handler
-	handler = h
-	for _, md := range h.middlewares {
-		handler = md(h)
-	}
-
-	r.Handle(dialogMsgsURL, handler)
-
-	// r.Handle(dialogURL, http.HandlerFunc(h.OpenDialog))
-	// r.Handle(dialogURL, h.middlewares[0](http.HandlerFunc(h.OpenDialog)))
+	// var handler http.Handler
+	// handler = h
+	// for _, md := range h.middlewares {
+	// 	handler = md(h)
+	// }
+	// r.Handle(dialogMsgsURL, handler)
 }
 
 func (h *dialogMsgsHandler) Middlewares(md ...func(http.Handler) http.Handler) *dialogMsgsHandler {
