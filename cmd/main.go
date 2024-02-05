@@ -15,12 +15,15 @@ import (
 	"github.com/The-Gleb/gmessenger/internal/config"
 	handlers "github.com/The-Gleb/gmessenger/internal/controller/http/v1/handler"
 	middlewares "github.com/The-Gleb/gmessenger/internal/controller/http/v1/middleware"
+	"github.com/The-Gleb/gmessenger/protos/gen/go/group"
+	"google.golang.org/grpc"
 
 	"github.com/The-Gleb/gmessenger/internal/domain/service"
 	auth_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/auth"
 	chats_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/chats"
 	dialogmsgs_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/dialogmsgs"
 	dialogws_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/dialogws.go"
+	groupws_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/groupws"
 	login_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/login"
 	register_usecase "github.com/The-Gleb/gmessenger/internal/domain/usecase/register"
 	"github.com/The-Gleb/gmessenger/internal/logger"
@@ -29,7 +32,7 @@ import (
 )
 
 func main() {
-	cfg := config.BuildConfig("config")
+	cfg := config.MustBuild("config")
 	logger.Initialize(cfg.LogLevel)
 
 	slog.Info("config build", "config", cfg)
@@ -39,6 +42,12 @@ func main() {
 		panic(err)
 	}
 
+	conn, err := grpc.Dial(cfg.GroupServerAddr)
+	if err != nil {
+		panic(err)
+	}
+	groupClient := group.NewGroupClient(conn)
+
 	userStorage := storage.NewUserStorage(dbClient)
 	sessionStorage := storage.NewSessionStorage(dbClient)
 	messageStorage := storage.NewMessageStorage(dbClient)
@@ -47,13 +56,15 @@ func main() {
 	sessionService := service.NewSessionService(sessionStorage)
 	messageService := service.NewMessageService(messageStorage)
 	dialogWSService := service.NewDialogService(messageStorage)
+	groupHub := service.NewGroupHub(groupClient)
 
 	loginUsecase := login_usecase.NewLoginUsecase(userService, sessionService)
 	registerUsecase := register_usecase.NewRegisterUsecase(userService, sessionService)
 	authUsecase := auth_usecase.NewAuthUsecase(sessionService)
 	chatsUsecase := chats_usecase.NewChatsUsecase(userService, sessionService)
-	dialogWSUsecase := dialogws_usecase.NewDialogWSUsecase(messageService, dialogWSService)
+	dialogWSUsecase := dialogws_usecase.NewDialogWSUsecase(dialogWSService)
 	dialogMsgsUsecase := dialogmsgs_usecase.NewDialogMsgsUsecase(messageService)
+	groupWSUsecase := groupws_usecase.NewGroupWSUsecase(groupHub)
 
 	authMiddleWare := middlewares.NewAuthMiddleware(authUsecase)
 	loginHandler := handlers.NewLoginHandler(loginUsecase)
@@ -61,6 +72,7 @@ func main() {
 	chatsHandler := handlers.NewChatsHandler(chatsUsecase)
 	dialogWSHandler := handlers.NewDialogWSHandler(dialogWSUsecase)
 	dialogMsgsHandler := handlers.NewDialogMsgsHandler(dialogMsgsUsecase)
+	groupWSHandler := handlers.NewGroupWSHandler(groupWSUsecase)
 
 	r := chi.NewRouter()
 
@@ -69,6 +81,7 @@ func main() {
 	chatsHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
 	dialogMsgsHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
 	dialogWSHandler.Middlewares(authMiddleWare.Websocket).AddToRouter(r)
+	groupWSHandler.Middlewares(authMiddleWare.Websocket).AddToRouter(r)
 
 	th := &templateHandler{fileName: "chat.html"}
 

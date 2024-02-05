@@ -3,11 +3,11 @@ package entity
 import "time"
 
 const (
-	NewMessage          = "new_message"
-	SendMessage         = "send_message"
-	UserActivity        = "user_activity"
-	MessageStatus       = "message_status"
-	DialogNotificatiohn = "dialog_notification"
+	NewMessage         = "new_message"
+	SendMessage        = "send_message"
+	UserActivity       = "user_activity"
+	MessageStatus      = "message_status"
+	DialogNotification = "dialog_notification"
 )
 
 type Event struct {
@@ -15,11 +15,11 @@ type Event struct {
 	Payload string `json:"payload"`
 }
 
-type SendDialogMessageEvent struct {
+type SendMessageEvent struct {
 	Text string `json:"text"`
 }
 
-type NewDialogMessageEvent struct {
+type NewMessageEvent struct {
 	ID          int64     `json:"id"`
 	Status      string    `json:"status"`
 	Text        string    `json:"text"`

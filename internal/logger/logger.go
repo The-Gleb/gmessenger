@@ -22,6 +22,7 @@ func Initialize(level string) {
 	}
 	slog.SetDefault(slog.New(
 		tint.NewHandler(os.Stderr, &tint.Options{
+			AddSource:  true,
 			Level:      &l,
 			TimeFormat: time.Kitchen,
 		}),

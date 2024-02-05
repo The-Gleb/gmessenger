@@ -35,6 +35,7 @@ func (uc *chatsUsecase) ShowChats(ctx context.Context, login string) ([]entity.C
 	}
 	chats := make([]entity.Chat, len(usernames))
 	for i, name := range usernames {
+
 		chats[i].Name = name
 	}
 

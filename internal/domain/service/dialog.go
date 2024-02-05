@@ -12,21 +12,21 @@ import (
 )
 
 type dialogService struct {
-	ClientList     map[string]map[string]*Client
+	ClientList     map[string]ClientSessions
 	messageStorage MessageStorage
 	mu             sync.RWMutex
 }
 
 func NewDialogService(ms MessageStorage) *dialogService {
 	return &dialogService{
-		ClientList:     make(map[string]map[string]*Client),
+		ClientList:     make(map[string]ClientSessions),
 		messageStorage: ms,
 	}
 }
 
 func (ds *dialogService) AddClient(c *Client) {
 	ds.mu.Lock()
-	c.DialogService = ds
+	c.Hub = ds
 	if _, ok := ds.ClientList[c.SenderLogin]; !ok {
 		ds.ClientList[c.SenderLogin] = make(map[string]*Client)
 	}
@@ -41,40 +41,44 @@ func (ds *dialogService) AddClient(c *Client) {
 }
 
 func (ds *dialogService) RemoveClient(c *Client) {
+
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
+
 	if senderClients, ok := ds.ClientList[c.SenderLogin]; ok {
+
 		if _, ok := senderClients[c.SessionToken]; ok {
 			delete(ds.ClientList[c.SenderLogin], c.SessionToken)
 		}
+
 		if len(senderClients) == 0 {
 			delete(ds.ClientList, c.SenderLogin)
 		}
+
 	}
+
 	c.Conn.Close()
+
 }
 
-func (ds *dialogService) RouteEvent(event *entity.Event, c *Client) error {
+func (ds *dialogService) RouteEvent(event entity.Event, senderClient *Client) error {
 
 	switch event.Type {
 	case entity.SendMessage:
-		return ds.SendNewMessage(event, c) //TODO
-
+		return ds.SendNewMessage(event, senderClient) //TODO
 	}
 
 	return nil
 
 }
 
-func (ds *dialogService) SendNewMessage(event *entity.Event, c *Client) error {
+func (ds *dialogService) SendNewMessage(event entity.Event, c *Client) error {
 
-	var chatevent entity.SendDialogMessageEvent
+	var chatevent entity.SendMessageEvent
 	if err := json.Unmarshal([]byte(event.Payload), &chatevent); err != nil {
 		slog.Error("cannot unmarshal json to SendDialogMessageEvent", "error", err.Error()) // TODO
 		return fmt.Errorf("bad payload in request: %v", err)                                // TODO
 	}
-
-	// Prepare an Outgoing Message to others
 
 	newMessage, err := ds.messageStorage.Create(context.TODO(), entity.Message{
 		Sender:    c.SenderLogin,
@@ -88,7 +92,7 @@ func (ds *dialogService) SendNewMessage(event *entity.Event, c *Client) error {
 		return err
 	}
 
-	var messageToSend entity.NewDialogMessageEvent
+	var messageToSend entity.NewMessageEvent
 
 	messageToSend.ID = newMessage.ID
 	messageToSend.Status = newMessage.Status
@@ -118,50 +122,54 @@ func (ds *dialogService) SendNewMessage(event *entity.Event, c *Client) error {
 		return fmt.Errorf("receiver %s has no active session", c.ReceiverLogin)
 	}
 
-	updateStatusEvent := entity.UpdateMessageStatusEvent{
-		ID:     messageToSend.ID,
-		Status: entity.SENT,
-	}
-	ds.mu.RUnlock()
-	// mb lock mutex
+	// updateStatusEvent := entity.UpdateMessageStatusEvent{
+	// 	ID:     messageToSend.ID,
+	// 	Status: entity.SENT,
+	// }
 	for _, receiver := range receiverSessions {
 		if receiver.ReceiverLogin == c.SenderLogin {
+
 			outgoingEvent.Type = entity.NewMessage
 			receiver.Message <- outgoingEvent
 
-			if updateStatusEvent.Status != entity.READ {
-				updateStatusEvent.Status = entity.READ
-				data, err := json.Marshal(updateStatusEvent)
-				if err != nil {
-					slog.Error(err.Error()) // TODO
-					return fmt.Errorf("failed to marshal updateStatusEvent message: %v", err)
-				}
-				for _, client := range ds.ClientList[c.SenderLogin] {
-					client.Message <- entity.Event{
-						Type:    entity.MessageStatus,
-						Payload: string(data),
-					}
-				}
-			}
+			// if updateStatusEvent.Status != entity.READ {
+			// 	updateStatusEvent.Status = entity.READ
+			// 	data, err := json.Marshal(updateStatusEvent)
+			// 	if err != nil {
+			// 		slog.Error(err.Error()) // TODO
+			// 		return fmt.Errorf("failed to marshal updateStatusEvent message: %v", err)
+			// 	}
+			// 	for _, client := range ds.ClientList[c.SenderLogin] {
+			// 		client.Message <- entity.Event{
+			// 			Type:    entity.MessageStatus,
+			// 			Payload: string(data),
+			// 		}
+			// 	}
+			// }
 		} else {
-			outgoingEvent.Type = entity.DialogNotificatiohn
-			if updateStatusEvent.Status == entity.SENT {
-				updateStatusEvent.Status = entity.READ
-				data, err := json.Marshal(updateStatusEvent)
-				if err != nil {
-					slog.Error(err.Error()) // TODO
-					return fmt.Errorf("failed to marshal updateStatusEvent message: %v", err)
-				}
-				for _, client := range ds.ClientList[c.SenderLogin] {
-					client.Message <- entity.Event{
-						Type:    entity.MessageStatus,
-						Payload: string(data),
-					}
-				}
-			}
+			outgoingEvent.Type = entity.DialogNotification
+
+			// TODO: send notification or update chat list
+
+			// if updateStatusEvent.Status == entity.SENT {
+			// 	updateStatusEvent.Status = entity.READ
+			// 	data, err := json.Marshal(updateStatusEvent)
+			// 	if err != nil {
+			// 		slog.Error(err.Error()) // TODO
+			// 		return fmt.Errorf("failed to marshal updateStatusEvent message: %v", err)
+			// 	}
+			// 	for _, client := range ds.ClientList[c.SenderLogin] {
+			// 		client.Message <- entity.Event{
+			// 			Type:    entity.MessageStatus,
+			// 			Payload: string(data),
+			// 		}
+			// 	}
+			// }
 		}
 
 	}
+
+	ds.mu.RUnlock()
 
 	return nil
 }

@@ -7,32 +7,34 @@ import (
 	"github.com/The-Gleb/gmessenger/internal/domain/service"
 )
 
-type MessageService interface {
-	Create(ctx context.Context, msg entity.Message) (entity.Message, error)
-	GetByID(ctx context.Context, id int64) (entity.Message, error)
-	GetByUsers(ctx context.Context, senderLogin, receiverLogin string) ([]entity.Message, error)
-	UpdateStatus(ctx context.Context, msgID int64, status string) (entity.Message, error) // id to string
-}
+// type MessageService interface {
+// 	Create(ctx context.Context, msg entity.Message) (entity.Message, error)
+// 	GetByID(ctx context.Context, id int64) (entity.Message, error)
+// 	GetByUsers(ctx context.Context, senderLogin, receiverLogin string) ([]entity.Message, error)
+// 	UpdateStatus(ctx context.Context, msgID int64, status string) (entity.Message, error) // id to string
+// }
 
-type DialogService interface {
+type DialogHub interface {
+	RouteEvent(event entity.Event, senderClient *service.Client) error
 	AddClient(c *service.Client)
+	RemoveClient(c *service.Client)
 }
 
 type dialogWSUsecase struct {
-	messageService MessageService
-	dialogService  DialogService
+	// messageService MessageService
+	dialogHub DialogHub
 }
 
-func NewDialogWSUsecase(ms MessageService, ds DialogService) *dialogWSUsecase {
+func NewDialogWSUsecase(dh DialogHub) *dialogWSUsecase {
 	return &dialogWSUsecase{
-		messageService: ms,
-		dialogService:  ds,
+		dialogHub: dh,
 	}
 }
 
 func (u *dialogWSUsecase) OpenDialog(ctx context.Context, dto OpenDialogDTO) error {
 
 	newClient := &service.Client{
+		Type:          service.Dialog, // probably useless
 		Conn:          dto.Websocket,
 		Message:       make(chan entity.Event, 5),
 		SenderLogin:   dto.SenderLogin,
@@ -40,7 +42,7 @@ func (u *dialogWSUsecase) OpenDialog(ctx context.Context, dto OpenDialogDTO) err
 		SessionToken:  dto.SenderToken,
 	}
 
-	u.dialogService.AddClient(newClient)
+	u.dialogHub.AddClient(newClient)
 
 	return nil
 

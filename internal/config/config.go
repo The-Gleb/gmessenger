@@ -1,14 +1,18 @@
 package config
 
 import (
+	"time"
+
 	"github.com/num30/config"
 )
 
 type Config struct {
-	RunAddress string   `default:":8080"`
-	LogLevel   string   `default:"info" flag:"loglevel"`
-	DB         Database `default:"{}"`
-	DebugMode  bool     `flag:"debug"`
+	RunAddress      string    `default:":8080"`
+	LogLevel        string    `default:"info" flag:"loglevel"`
+	TokenTTL        time.Time `default:"24h"`
+	GroupServerAddr string    `default:":8081"`
+	DB              Database  `default:"{}"`
+	DebugMode       bool      `flag:"debug"`
 }
 
 type Database struct {
@@ -19,7 +23,7 @@ type Database struct {
 	Port     int    `default:"5434"`
 }
 
-func BuildConfig(cfgFile string) *Config {
+func MustBuild(cfgFile string) *Config {
 	var conf Config
 	err := config.NewConfReader(cfgFile).Read(&conf)
 	if err != nil {
