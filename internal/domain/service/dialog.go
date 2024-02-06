@@ -45,16 +45,10 @@ func (ds *dialogService) RemoveClient(c *Client) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if senderClients, ok := ds.ClientList[c.SenderLogin]; ok {
+	delete(ds.ClientList[c.SenderLogin], c.SessionToken)
 
-		if _, ok := senderClients[c.SessionToken]; ok {
-			delete(ds.ClientList[c.SenderLogin], c.SessionToken)
-		}
-
-		if len(senderClients) == 0 {
-			delete(ds.ClientList, c.SenderLogin)
-		}
-
+	if len(ds.ClientList[c.SenderLogin]) == 0 {
+		delete(ds.ClientList, c.SenderLogin)
 	}
 
 	c.Conn.Close()

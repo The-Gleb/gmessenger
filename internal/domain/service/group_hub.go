@@ -38,11 +38,13 @@ func (gh *groupHub) AddClient(c *Client) {
 		GroupId:   c.GroupID,
 	})
 	if err != nil {
-		c.Conn.CloseHandler()(1, "hello from close handler. You are not a member of this chat") // TODO
+		slog.Error(err.Error())
+		c.Conn.CloseHandler()(1, "hello from close handler. some error occured") // TODO
 		return
 	}
 
-	if !resp.IsMember {
+	if !resp.GetIsMember() {
+		slog.Error("client is not a member of this chat", "userLogin", c.SenderLogin, "group ID", c.GroupID)
 		c.Conn.CloseHandler()(1, "hello from close handler. You are not a member of this chat, or group doesn`t exists") // TODO
 		return
 	}
@@ -75,6 +77,18 @@ func (gh *groupHub) RemoveClient(c *Client) {
 
 	gh.mu.Lock()
 	defer gh.mu.Unlock()
+
+	delete(gh.Rooms[c.GroupID].Clients[c.SenderLogin], c.SessionToken)
+
+	c.Conn.Close()
+
+	if len(gh.Rooms[c.GroupID].Clients[c.SenderLogin]) == 0 {
+		delete(gh.Rooms[c.GroupID].Clients, c.SenderLogin)
+	}
+
+	if len(gh.Rooms[c.GroupID].Clients) == 0 {
+		delete(gh.Rooms, c.GroupID)
+	}
 
 }
 
