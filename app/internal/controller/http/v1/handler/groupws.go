@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
 	groupws_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/groupws"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
@@ -58,20 +58,20 @@ func (h *groupWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	login, ok := r.Context().Value("userLogin").(string)
 	if !ok {
 		slog.Error("cannot get userLogin")
-		service.CloseWSConnection(conn, websocket.CloseInternalServerErr)
+		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
 	token, ok := r.Context().Value("token").(string)
 	if !ok {
 		slog.Error("[handler.OpenGroup]: couldn't get session token from context")
-		service.CloseWSConnection(conn, websocket.CloseInternalServerErr)
+		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
 
 	groupID, err := strconv.ParseInt(chi.URLParam(r, "groupId"), 10, 64)
 	if err != nil {
 		slog.Error("couldn`t parse to int group id from URL param")
-		service.CloseWSConnection(conn, websocket.CloseInternalServerErr)
+		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
 

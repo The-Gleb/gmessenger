@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
 	dialogws_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/dialogws.go"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
@@ -66,13 +66,13 @@ func (h *dialogWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	login, ok := r.Context().Value("userLogin").(string)
 	if !ok {
 		slog.Error("cannot get userLogin")
-		service.CloseWSConnection(conn, websocket.CloseInternalServerErr)
+		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
 	token, ok := r.Context().Value("token").(string)
 	if !ok {
 		slog.Error("[dialogWSHandler.ServeHTTP]: couldn't get session token from context")
-		service.CloseWSConnection(conn, websocket.CloseInternalServerErr)
+		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
 

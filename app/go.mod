@@ -5,6 +5,7 @@ go 1.21.3
 require (
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.0.11
+	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.5.3
 	github.com/google/uuid v1.5.0
 	github.com/gorilla/websocket v1.5.1
@@ -12,6 +13,7 @@ require (
 	github.com/jackc/pgx/v5 v5.5.2
 	github.com/lmittmann/tint v1.0.4
 	github.com/num30/config v0.1.2
+	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.17.0
 	google.golang.org/grpc v1.61.0
 	google.golang.org/protobuf v1.31.0
@@ -19,6 +21,7 @@ require (
 
 require (
 	github.com/creasty/defaults v1.6.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -34,6 +37,7 @@ require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect

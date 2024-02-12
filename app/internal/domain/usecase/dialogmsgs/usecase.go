@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
 )
 
 type MessageService interface {
@@ -16,7 +16,7 @@ type MessageService interface {
 }
 
 type DialogService interface {
-	AddClient(c *service.Client)
+	AddClient(c *client.Client)
 }
 
 type dialogMsgsUsecase struct {

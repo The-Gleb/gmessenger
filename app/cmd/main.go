@@ -15,7 +15,7 @@ import (
 	"github.com/The-Gleb/gmessenger/app/internal/config"
 	handlers "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/handler"
 	middlewares "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
-	"github.com/The-Gleb/gmessenger/app/pkg/protos/gen/go/group"
+	"github.com/The-Gleb/gmessenger/app/pkg/proto/go/group"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 

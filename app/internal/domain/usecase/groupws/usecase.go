@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
 )
 
 type GroupHub interface {
-	RouteEvent(event entity.Event, senderClient *service.Client)
-	AddClient(c *service.Client)
-	RemoveClient(c *service.Client)
+	RouteEvent(event entity.Event, senderClient *client.Client)
+	AddClient(c *client.Client)
+	RemoveClient(c *client.Client)
 }
 
 type groupWSUsecase struct {
@@ -25,8 +25,8 @@ func (u *groupWSUsecase) OpenGroup(ctx context.Context, dto OpenGroupDTO) error 
 
 	// TODO: check if group exists and if user is it`s member
 
-	newClient := &service.Client{
-		Type:         service.Group, // probably useless
+	newClient := &client.Client{
+		Type:         client.Group, // probably useless
 		Conn:         dto.Websocket,
 		Message:      make(chan entity.Event, 5),
 		SenderLogin:  dto.SenderLogin,

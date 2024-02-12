@@ -6,7 +6,7 @@ import (
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
-	"github.com/The-Gleb/gmessenger/app/pkg/protos/gen/go/group"
+	"github.com/The-Gleb/gmessenger/app/pkg/proto/go/group"
 )
 
 type groupMsgsUsecase struct {

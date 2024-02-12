@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
 	"github.com/gorilla/websocket"
 )
 
@@ -24,24 +25,24 @@ func NewDialogService(ms MessageStorage) *dialogService {
 	}
 }
 
-func (ds *dialogService) AddClient(c *Client) {
+func (ds *dialogService) AddClient(c *client.Client) {
 
 	ds.mu.Lock()
 	c.Hub = ds
 	if _, ok := ds.ClientList[c.SenderLogin]; !ok {
-		ds.ClientList[c.SenderLogin] = make(map[string]*Client)
+		ds.ClientList[c.SenderLogin] = make(map[string]*client.Client)
 	}
 	ds.ClientList[c.SenderLogin][c.SessionToken] = c
 	ds.mu.Unlock()
 
 	slog.Debug("client added to the list", "struct", ds.ClientList[c.SenderLogin][c.SessionToken])
 
-	go c.writeMessage()
-	c.readMessage()
+	go c.WriteMessage()
+	c.ReadMessage()
 
 }
 
-func (ds *dialogService) RemoveClient(c *Client) {
+func (ds *dialogService) RemoveClient(c *client.Client) {
 
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
@@ -52,11 +53,11 @@ func (ds *dialogService) RemoveClient(c *Client) {
 		delete(ds.ClientList, c.SenderLogin)
 	}
 
-	CloseWSConnection(c.Conn, websocket.CloseNormalClosure)
+	client.CloseWSConnection(c.Conn, websocket.CloseNormalClosure)
 
 }
 
-func (ds *dialogService) RouteEvent(event entity.Event, senderClient *Client) {
+func (ds *dialogService) RouteEvent(event entity.Event, senderClient *client.Client) {
 
 	switch event.Type {
 	case entity.SendMessage:
@@ -65,11 +66,11 @@ func (ds *dialogService) RouteEvent(event entity.Event, senderClient *Client) {
 	}
 }
 
-func (ds *dialogService) SendNewMessage(event entity.Event, c *Client) {
+func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 
 	var chatevent entity.SendMessageEvent
-	if err := json.Unmarshal([]byte(event.Payload), &chatevent); err != nil {
-		CloseWSConnection(c.Conn, websocket.CloseInvalidFramePayloadData)
+	if err := json.Unmarshal(event.Payload, &chatevent); err != nil {
+		client.CloseWSConnection(c.Conn, websocket.CloseInvalidFramePayloadData)
 		slog.Error("cannot unmarshal json to SendDialogMessageEvent", "error", err.Error())
 		return
 	}
@@ -82,7 +83,7 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *Client) {
 		Timestamp: time.Now(),
 	})
 	if err != nil {
-		CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
+		client.CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
 		slog.Error("cannot unmarshal json to SendDialogMessageEvent ", "error", err.Error())
 		return
 	}
@@ -97,7 +98,7 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *Client) {
 
 	data, err := json.Marshal(messageToSend)
 	if err != nil {
-		CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
+		client.CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
 		slog.Error(err.Error())
 		return
 	}

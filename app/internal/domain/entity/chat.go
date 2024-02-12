@@ -5,6 +5,6 @@ type Chat struct {
 	GroupID       int64
 	ReceiverLogin string
 	Name          string
-	LastMessage   string
+	LastMessage   Message
 	Unread        int64
 }

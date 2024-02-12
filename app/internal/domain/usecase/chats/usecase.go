@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
-	"github.com/The-Gleb/gmessenger/app/pkg/protos/gen/go/group"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
+	"github.com/The-Gleb/gmessenger/app/pkg/proto/go/group"
 )
 
 type SessionService interface {
@@ -45,7 +45,8 @@ func NewChatsUsecase(us UserService, gc group.GroupClient, ms MessageService) *c
 }
 
 func (uc *chatsUsecase) ShowChats(ctx context.Context, login string) ([]entity.Chat, error) {
-	chats, err := uc.userService.GetChatsView(ctx, login)
+
+	chats, err := uc.userService.GetChatsView(ctx, login) // TODO: handle limit and offset
 	if err != nil {
 		return []entity.Chat{}, err
 	}
@@ -62,10 +63,16 @@ func (uc *chatsUsecase) ShowChats(ctx context.Context, login string) ([]entity.C
 	groups := make([]entity.Chat, len(getGroupsResponse.GetGroups()))
 
 	for i, groupView := range getGroupsResponse.GetGroups() {
-		groups[i].Type = service.Group
+		groups[i].Type = client.Group
 		groups[i].GroupID = groupView.GetId()
 		groups[i].Name = groupView.GetName()
-		groups[i].LastMessage = groupView.GetLastMessage()
+		groups[i].LastMessage = entity.Message{
+			ID:        groupView.LastMessage.GetId(),
+			Sender:    groupView.LastMessage.GetSenderLogin(),
+			Text:      groupView.LastMessage.GetText(),
+			Status:    groupView.LastMessage.GetStatus().String(),
+			Timestamp: groupView.LastMessage.GetTimestamp().AsTime(),
+		}
 		groups[i].Unread = int64(groupView.GetUnread())
 	}
 

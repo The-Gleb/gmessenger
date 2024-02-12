@@ -1,4 +1,4 @@
-package service
+package client
 
 import (
 	"encoding/json"
@@ -41,7 +41,7 @@ var (
 
 // }
 
-func (c *Client) writeMessage() {
+func (c *Client) WriteMessage() {
 
 	ticker := time.NewTicker(pingInterval)
 
@@ -55,11 +55,17 @@ func (c *Client) writeMessage() {
 		case message, ok := <-c.Message:
 
 			if !ok {
-				CloseWSConnection(c.Conn, websocket.CloseAbnormalClosure)
+				CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
 				return
 			}
 
 			slog.Debug("receives message:", "msg", message)
+
+			if message.Payload == nil {
+				CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
+				slog.Error("Payload field is empty")
+				return
+			}
 
 			data, err := json.Marshal(message)
 			if err != nil {
@@ -93,7 +99,7 @@ func (c *Client) pongHandler(pongMsg string) error {
 
 }
 
-func (c *Client) readMessage() {
+func (c *Client) ReadMessage() {
 
 	defer func() {
 		c.Hub.RemoveClient(c)
@@ -112,7 +118,7 @@ func (c *Client) readMessage() {
 
 		_, m, err := c.Conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseInternalServerErr) {
 				slog.Error(err.Error())
 			}
 			break
@@ -124,7 +130,7 @@ func (c *Client) readMessage() {
 
 		err = json.Unmarshal(m, &event)
 		if err != nil {
-			CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
+			CloseWSConnection(c.Conn, websocket.CloseInvalidFramePayloadData)
 			slog.Error(err.Error())
 			return
 		}

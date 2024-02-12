@@ -47,6 +47,40 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 	return i, err
 }
 
+const getLastMessage = `-- name: GetLastMessage :one
+SELECT id, sender, receiver, text, status, created_at FROM messages
+WHERE (sender = $1 AND receiver = $2)
+OR (sender = $2 AND receiver = $1)
+ORDER BY id
+LIMIT $3 OFFSET $4
+`
+
+type GetLastMessageParams struct {
+	Sender   pgtype.Text
+	Receiver pgtype.Text
+	Limit    int32
+	Offset   int32
+}
+
+func (q *Queries) GetLastMessage(ctx context.Context, arg GetLastMessageParams) (Message, error) {
+	row := q.db.QueryRow(ctx, getLastMessage,
+		arg.Sender,
+		arg.Receiver,
+		arg.Limit,
+		arg.Offset,
+	)
+	var i Message
+	err := row.Scan(
+		&i.ID,
+		&i.Sender,
+		&i.Receiver,
+		&i.Text,
+		&i.Status,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getMessageByID = `-- name: GetMessageByID :one
 SELECT id, sender, receiver, text, status, created_at FROM messages
 WHERE id = $1

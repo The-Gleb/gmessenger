@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
 )
 
 // type MessageService interface {
@@ -15,9 +15,9 @@ import (
 // }
 
 type DialogHub interface {
-	RouteEvent(event entity.Event, senderClient *service.Client)
-	AddClient(c *service.Client)
-	RemoveClient(c *service.Client)
+	RouteEvent(event entity.Event, senderClient *client.Client)
+	AddClient(c *client.Client)
+	RemoveClient(c *client.Client)
 }
 
 type dialogWSUsecase struct {
@@ -35,8 +35,8 @@ func (u *dialogWSUsecase) OpenDialog(ctx context.Context, dto OpenDialogDTO) err
 
 	// TODO: check if receiver exists
 
-	newClient := &service.Client{
-		Type:          service.Dialog, // probably useless
+	newClient := &client.Client{
+		Type:          client.Dialog, // probably useless
 		Conn:          dto.Websocket,
 		Message:       make(chan entity.Event, 5),
 		SenderLogin:   dto.SenderLogin,

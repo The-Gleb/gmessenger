@@ -8,7 +8,7 @@ import (
 
 	"github.com/The-Gleb/gmessenger/app/internal/adapter/db/sqlc"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
 	"github.com/The-Gleb/gmessenger/app/pkg/client/postgresql"
 	"github.com/jackc/pgerrcode"
@@ -135,10 +135,10 @@ func (us *userStorage) GetChatsView(ctx context.Context, userLogin string) ([]en
 
 	chatsView := make([]entity.Chat, len(sqlcUsers))
 	for i, sqlcUser := range sqlcUsers {
-		chatsView[i].Type = service.Dialog
+		chatsView[i].Type = client.Dialog
 		chatsView[i].ReceiverLogin = sqlcUser.Login
 		chatsView[i].Name = sqlcUser.Username.String
-		sqlcLastMsg, err := sqlcTx.GetMessagesByUsers(ctx, sqlc.GetMessagesByUsersParams{
+		sqlcLastMsg, err := sqlcTx.GetLastMessage(ctx, sqlc.GetLastMessageParams{
 			Sender: sqlcUser.Username,
 			Receiver: pgtype.Text{
 				String: userLogin,
@@ -155,7 +155,14 @@ func (us *userStorage) GetChatsView(ctx context.Context, userLogin string) ([]en
 			slog.Error(err.Error())
 			return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
 		}
-		chatsView[i].LastMessage = sqlcLastMsg[0].Text.String
+		chatsView[i].LastMessage = entity.Message{
+			ID:        sqlcLastMsg.ID,
+			Sender:    sqlcLastMsg.Sender.String,
+			Text:      sqlcLastMsg.Text.String,
+			Status:    sqlcLastMsg.Status.String,
+			Timestamp: sqlcLastMsg.CreatedAt.Time,
+		}
+
 		unreadNumber, err := sqlcTx.GetUnreadNumber(ctx, sqlc.GetUnreadNumberParams{
 			Sender: sqlcUser.Username,
 			Receiver: pgtype.Text{
@@ -164,6 +171,12 @@ func (us *userStorage) GetChatsView(ctx context.Context, userLogin string) ([]en
 			},
 		})
 		chatsView[i].Unread = unreadNumber
+	}
+
+	err = dbTx.Commit(ctx)
+	if err != nil {
+		slog.Error(err.Error())
+		return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
 	}
 
 	return chatsView, nil

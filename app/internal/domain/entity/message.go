@@ -3,9 +3,9 @@ package entity
 import "time"
 
 const (
-	SENT      = "sent"
-	DELIVERED = "delivered"
-	READ      = "read"
+	SENT      = "SENT"
+	DELIVERED = "DELIVERED"
+	READ      = "READ"
 )
 
 type Message struct {
