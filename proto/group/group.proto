@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package group;
 
-option go_package = "github.com/The-Gleb/gmessenger/protos/gen/go/group;group";
+option go_package = "github.com/The-Gleb/gmessenger/app/pkg/proto/go/gen/group;group";
 
 import "google/protobuf/timestamp.proto";
 
@@ -15,14 +15,14 @@ service Group {
     rpc AddMessage(AddMessageRequest) returns (AddMessageResponse);
     rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
     rpc UpdateMessageStatus(UpdateMessageStatusRequest) returns (UpdateMessageStatusResponse);
-
+    rpc GetMessageById(GetMessageByIdRequest) returns (GetMessageByIdResponse);
 }
 
 message GroupView {
     int64 id = 1;
     string name = 2;
-    string last_message = 3;
-    int32 unread = 4;
+    MessageView last_message = 3;
+    int32 unread = 5;
 }
 
 enum MessageStatus{
@@ -88,6 +88,8 @@ message AddMessageResponse {
 
 message GetMessagesRequest {
     int64 group_id = 1;
+    int32 limit = 2;
+    int32 offset = 3;
 }
 
 message GetMessagesResponse {
@@ -102,4 +104,12 @@ message UpdateMessageStatusRequest {
 message UpdateMessageStatusResponse {
     int64 id = 1;
     MessageStatus status = 2;
+}
+
+message GetMessageByIdRequest {
+    int64 id = 1;
+}
+
+message GetMessageByIdResponse {
+    MessageView message = 1;
 }

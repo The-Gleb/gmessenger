@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v3.12.4
-// source: group/group.proto
+// source: proto/group/group.proto
 
 package group
 
@@ -18,7 +18,6 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-
 const (
 	Group_Create_FullMethodName              = "/group.Group/Create"
 	Group_GetGroups_FullMethodName           = "/group.Group/GetGroups"
@@ -27,6 +26,7 @@ const (
 	Group_AddMessage_FullMethodName          = "/group.Group/AddMessage"
 	Group_GetMessages_FullMethodName         = "/group.Group/GetMessages"
 	Group_UpdateMessageStatus_FullMethodName = "/group.Group/UpdateMessageStatus"
+	Group_GetMessageById_FullMethodName      = "/group.Group/GetMessageById"
 )
 
 // GroupClient is the client API for Group service.
@@ -40,6 +40,7 @@ type GroupClient interface {
 	AddMessage(ctx context.Context, in *AddMessageRequest, opts ...grpc.CallOption) (*AddMessageResponse, error)
 	GetMessages(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (*GetMessagesResponse, error)
 	UpdateMessageStatus(ctx context.Context, in *UpdateMessageStatusRequest, opts ...grpc.CallOption) (*UpdateMessageStatusResponse, error)
+	GetMessageById(ctx context.Context, in *GetMessageByIdRequest, opts ...grpc.CallOption) (*GetMessageByIdResponse, error)
 }
 
 type groupClient struct {
@@ -113,6 +114,15 @@ func (c *groupClient) UpdateMessageStatus(ctx context.Context, in *UpdateMessage
 	return out, nil
 }
 
+func (c *groupClient) GetMessageById(ctx context.Context, in *GetMessageByIdRequest, opts ...grpc.CallOption) (*GetMessageByIdResponse, error) {
+	out := new(GetMessageByIdResponse)
+	err := c.cc.Invoke(ctx, Group_GetMessageById_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GroupServer is the server API for Group service.
 // All implementations must embed UnimplementedGroupServer
 // for forward compatibility
@@ -124,6 +134,7 @@ type GroupServer interface {
 	AddMessage(context.Context, *AddMessageRequest) (*AddMessageResponse, error)
 	GetMessages(context.Context, *GetMessagesRequest) (*GetMessagesResponse, error)
 	UpdateMessageStatus(context.Context, *UpdateMessageStatusRequest) (*UpdateMessageStatusResponse, error)
+	GetMessageById(context.Context, *GetMessageByIdRequest) (*GetMessageByIdResponse, error)
 	mustEmbedUnimplementedGroupServer()
 }
 
@@ -151,6 +162,9 @@ func (UnimplementedGroupServer) GetMessages(context.Context, *GetMessagesRequest
 }
 func (UnimplementedGroupServer) UpdateMessageStatus(context.Context, *UpdateMessageStatusRequest) (*UpdateMessageStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateMessageStatus not implemented")
+}
+func (UnimplementedGroupServer) GetMessageById(context.Context, *GetMessageByIdRequest) (*GetMessageByIdResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMessageById not implemented")
 }
 func (UnimplementedGroupServer) mustEmbedUnimplementedGroupServer() {}
 
@@ -291,6 +305,24 @@ func _Group_UpdateMessageStatus_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Group_GetMessageById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMessageByIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GroupServer).GetMessageById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Group_GetMessageById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GroupServer).GetMessageById(ctx, req.(*GetMessageByIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Group_ServiceDesc is the grpc.ServiceDesc for Group service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -326,7 +358,11 @@ var Group_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "UpdateMessageStatus",
 			Handler:    _Group_UpdateMessageStatus_Handler,
 		},
+		{
+			MethodName: "GetMessageById",
+			Handler:    _Group_GetMessageById_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "group/group.proto",
+	Metadata: "proto/group/group.proto",
 }
