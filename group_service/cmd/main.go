@@ -2,9 +2,6 @@ package main
 
 import (
 	"context"
-	"log/slog"
-	"net"
-
 	"github.com/The-Gleb/gmessenger/app/pkg/proto/go/group"
 	"github.com/The-Gleb/gmessenger/group_service/internal/adapter/db/postgres"
 	"github.com/The-Gleb/gmessenger/group_service/internal/config"
@@ -13,6 +10,9 @@ import (
 	"github.com/The-Gleb/gmessenger/group_service/internal/logger"
 	"github.com/The-Gleb/gmessenger/group_service/pkg/client/postgresql"
 	"google.golang.org/grpc"
+	"log"
+	"log/slog"
+	"net"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 
 	client, err := postgresql.NewClient(context.Background(), 2, cfg.DB)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	groupStorage := postgres.NewGroupStorage(client)
@@ -35,18 +35,17 @@ func main() {
 
 	groupServerAPI := serverapi.NewServerAPI(messageService, groupService)
 
-	l, err := net.Listen("tcp", "localhost:8081")
+	l, err := net.Listen("tcp", cfg.ListenAddress)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	grpcServer := grpc.NewServer()
 
 	group.RegisterGroupServer(grpcServer, groupServerAPI)
 
-	slog.Info("lister address", l.Addr())
-
+	slog.Info("starting group server", "config", cfg)
 	if err := grpcServer.Serve(l); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

@@ -138,6 +138,10 @@ func (s *messageStorage) GetLastMessage(ctx context.Context, groupID int64) (ent
 		return entity.Message{}, err
 	}
 
+	if len(sqlcMessage) == 0 {
+		return entity.Message{}, errors.NewDomainError(errors.ErrNoDataFound, "there is no last message")
+	}
+
 	return entity.Message{
 		ID:        sqlcMessage[0].ID,
 		GroupID:   sqlcMessage[0].GroupID.Int64,

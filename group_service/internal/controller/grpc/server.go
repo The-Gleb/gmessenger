@@ -150,24 +150,30 @@ func (s *serverAPI) GetGroups(ctx context.Context, getGroupsRequest *group.GetGr
 
 	for i, g := range groups {
 
-		lastMessage, err := s.messageService.GetLastMessage(ctx, g.ID)
-		if err != nil {
-			return nil, status.Error(codes.Internal, "error getting user's groups")
-		}
-
 		groupViews[i] = &group.GroupView{
 			Id:     g.ID,
 			Name:   g.Name,
 			Unread: 0, // TODO: figure out how to store unread messages for each group member
-			LastMessage: &group.MessageView{
-				Id:          lastMessage.ID,
-				GroupId:     lastMessage.GroupID,
-				SenderLogin: lastMessage.Sender,
-				Text:        lastMessage.Text,
-				Status:      group.MessageStatus(group.MessageStatus_value[lastMessage.Status]),
-				Timestamp:   timestamppb.New(lastMessage.Timestamp),
-			},
 		}
+
+		lastMessage, err := s.messageService.GetLastMessage(ctx, g.ID)
+		if err != nil {
+			if errors.Code(err) == errors.ErrNoDataFound {
+				groupViews[i].LastMessage = nil
+				continue
+			}
+			return nil, status.Error(codes.Internal, "error getting user's groups")
+		}
+
+		groupViews[i].LastMessage = &group.MessageView{
+			Id:          lastMessage.ID,
+			GroupId:     lastMessage.GroupID,
+			SenderLogin: lastMessage.Sender,
+			Text:        lastMessage.Text,
+			Status:      group.MessageStatus(group.MessageStatus_value[lastMessage.Status]),
+			Timestamp:   timestamppb.New(lastMessage.Timestamp),
+		}
+
 	}
 
 	return &group.GetGroupsResponse{

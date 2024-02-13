@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -44,8 +45,9 @@ func main() {
 		panic(err)
 	}
 
+	groupServerAddr := fmt.Sprintf("%s:%d", cfg.GroupServerHost, cfg.GroupServerPort)
 	// TODO: make secure
-	conn, err := grpc.Dial(cfg.GroupServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(groupServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
