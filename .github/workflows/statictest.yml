@@ -44,5 +44,5 @@ jobs:
         run: go test ./... -cover
 
       - name: group_service coverage
-        working-directory: ./app
+        working-directory: ./group_service
         run: go test ./... -cover 
