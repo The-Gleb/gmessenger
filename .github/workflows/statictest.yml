@@ -13,7 +13,9 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
-            - name: Run golangci-lint
+            - name: Go to gateway go module
+              run: cd app
+            - name: Run golangci-lint in gateway service
               uses: golangci/golangci-lint-action@v3
               with:
                 version: v1.54
