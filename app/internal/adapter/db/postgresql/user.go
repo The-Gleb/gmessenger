@@ -123,7 +123,7 @@ func (us *userStorage) GetChatsView(ctx context.Context, userLogin string) ([]en
 	if err != nil {
 		return []entity.Chat{}, err
 	}
-	defer dbTx.Rollback(ctx)
+	defer dbTx.Rollback(ctx) //nolint:all
 
 	sqlcTx := us.sqlc.WithTx(dbTx)
 
@@ -170,6 +170,10 @@ func (us *userStorage) GetChatsView(ctx context.Context, userLogin string) ([]en
 				Valid:  true,
 			},
 		})
+		if err != nil {
+			slog.Error(err.Error())
+			return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
+		}
 		chatsView[i].Unread = unreadNumber
 	}
 

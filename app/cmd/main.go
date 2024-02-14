@@ -108,7 +108,10 @@ func main() {
 		ServerShutdownSignal := make(chan os.Signal, 1)
 		signal.Notify(ServerShutdownSignal, syscall.SIGINT)
 		<-ServerShutdownSignal
-		s.Shutdown(context.Background())
+		err = s.Shutdown(context.Background())
+		if err != nil {
+			panic(err)
+		}
 		slog.Info("server shutdown")
 	}()
 

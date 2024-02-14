@@ -105,6 +105,10 @@ func (h *groupMsgsHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 	slog.Debug("got messages", "messages", messages)
 
-	rw.Write(b)
+	_, err = rw.Write(b)
+	if err != nil {
+		http.Error(rw, " error writing to body", http.StatusInternalServerError)
+		return
+	}
 
 }

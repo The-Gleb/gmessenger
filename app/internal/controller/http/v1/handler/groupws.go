@@ -84,6 +84,6 @@ func (h *groupWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	slog.Debug("group usecase dto ", "struct", usecaseDTO)
 
-	h.usecase.OpenGroup(r.Context(), usecaseDTO)
+	_ = h.usecase.OpenGroup(r.Context(), usecaseDTO)
 
 }

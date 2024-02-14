@@ -42,7 +42,12 @@ func GetWSConnections() (server *httptest.Server, clientConn, serverConn *websoc
 		}
 	}))
 
-	clientConn, _, err = websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(server.URL, "http"), nil)
+	var response *http.Response
+	clientConn, response, err = websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(server.URL, "http"), nil)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	err = response.Body.Close()
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -50,7 +55,7 @@ func GetWSConnections() (server *httptest.Server, clientConn, serverConn *websoc
 	return server, clientConn, serverConn, nil
 }
 
-func TestWriteMessage(t *testing.T) {
+func Test_WriteMessage(t *testing.T) {
 
 	validNewMessageEventJson, err := json.Marshal(entity.NewMessageEvent{
 		ID:          1,
@@ -128,7 +133,7 @@ func TestWriteMessage(t *testing.T) {
 	}
 }
 
-func TestClient_ReadMessage(t *testing.T) {
+func Test_ReadMessage(t *testing.T) {
 
 	validSendMessageEventJson, err := json.Marshal(entity.SendMessageEvent{
 		Text: "Hello",
@@ -177,6 +182,8 @@ func TestClient_ReadMessage(t *testing.T) {
 			}
 
 			go client.ReadMessage()
+
+			time.Sleep(time.Millisecond * 10) //nolint:all
 
 			err = clientConn.WriteMessage(websocket.TextMessage, tt.message)
 			require.NoError(t, err)

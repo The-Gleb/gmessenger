@@ -9,13 +9,40 @@ on:
 jobs:
     lint:
         runs-on: ubuntu-latest
-        container: golang:1.21.3
+        # container: golang:1.21.3
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
-            - name: Go to gateway go module
-              run: cd app
-            - name: Run golangci-lint in gateway service
-              uses: golangci/golangci-lint-action@v3
+
+            - uses: actions/setup-go@v4
               with:
-                version: v1.54
+                go-version: '1.21.3'
+           
+            - name: Run golangci-lint in gateway service
+              uses: golangci/golangci-lint-action@v4.0.0
+              with:
+                working-directory: ./app
+                args: --config=../.golangci.yml
+
+            - name: Run golangci-lint in group service
+              uses: golangci/golangci-lint-action@v4.0.0
+              with:
+                working-directory: ./group_service
+                args: --config=../.golangci.yml
+
+    tests_and_coverage:
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v3
+                  
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.3'
+
+      - name: gatewat coverage
+        working-directory: ./app
+        run: go test ./... -cover
+
+      - name: group_service coverage
+        working-directory: ./app
+        run: go test ./... -cover 

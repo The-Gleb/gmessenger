@@ -59,10 +59,14 @@ func (h *chatsHandler) ShowChats(rw http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(chats)
 	if err != nil {
-		http.Error(rw, "[chatsHandler.ShowChats]: error parsing to json", http.StatusInternalServerError)
+		http.Error(rw, "error parsing to json", http.StatusInternalServerError)
 		return
 	}
 
-	rw.Write(b)
+	_, err = rw.Write(b)
+	if err != nil {
+		http.Error(rw, "error writing to body", http.StatusInternalServerError)
+		return
+	}
 
 }

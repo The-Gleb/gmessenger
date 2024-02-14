@@ -15,7 +15,7 @@ const (
 
 type Event struct {
 	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"payload,require"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 type SendMessageEvent struct {

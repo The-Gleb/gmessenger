@@ -85,6 +85,6 @@ func (h *dialogWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	slog.Debug("dialog usecase dto ", "struct", usecaseDTO)
 
-	h.usecase.OpenDialog(r.Context(), usecaseDTO)
+	_ = h.usecase.OpenDialog(r.Context(), usecaseDTO)
 
 }

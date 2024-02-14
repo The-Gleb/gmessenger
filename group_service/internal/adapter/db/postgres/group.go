@@ -30,7 +30,7 @@ func (s *groupStorage) Create(ctx context.Context, group entity.GroupCreate) (en
 	if err != nil {
 		return entity.Group{}, err
 	}
-	defer dbTx.Rollback(ctx)
+	defer dbTx.Rollback(ctx) //nolint:all
 
 	sqlcTx := s.sqlc.WithTx(dbTx)
 
@@ -44,6 +44,9 @@ func (s *groupStorage) Create(ctx context.Context, group entity.GroupCreate) (en
 			Valid: true,
 		},
 	})
+	if err != nil {
+		return entity.Group{}, errors.NewDomainError(errors.ErrDB, err.Error())
+	}
 
 	for _, member := range group.MembersLogins {
 		err := sqlcTx.AddMember(ctx, sqlc.AddMemberParams{

@@ -1,0 +1,13 @@
+linters:
+  enable:
+    - bodyclose
+issues:
+  exlude-rules:
+    - linters:
+        - errcheck
+      text: "Error return value of `dbTx.Rollback` is not checked"
+linters-settings:
+  errcheck:
+    # exclude: errcheck-exclude.txt
+    exclude-functions:
+    - (pgx.Tx).Rollback()

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log/slog"
 	"sync"
-	"time"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
@@ -76,11 +75,11 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 	}
 
 	newMessage, err := ds.messageStorage.Create(context.TODO(), entity.Message{
-		Sender:    c.SenderLogin,
-		Receiver:  c.ReceiverLogin,
-		Text:      chatevent.Text,
-		Status:    entity.SENT,
-		Timestamp: time.Now(),
+		Sender:   c.SenderLogin,
+		Receiver: c.ReceiverLogin,
+		Text:     chatevent.Text,
+		Status:   entity.SENT,
+		// Timestamp: time.Now(),
 	})
 	if err != nil {
 		client.CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
@@ -148,20 +147,6 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 
 			// TODO: send notification or update chat list
 
-			// if updateStatusEvent.Status == entity.SENT {
-			// 	updateStatusEvent.Status = entity.READ
-			// 	data, err := json.Marshal(updateStatusEvent)
-			// 	if err != nil {
-			// 		slog.Error(err.Error()) // TODO
-			// 		return fmt.Errorf("failed to marshal updateStatusEvent message: %v", err)
-			// 	}
-			// 	for _, client := range ds.ClientList[c.SenderLogin] {
-			// 		client.Message <- entity.Event{
-			// 			Type:    entity.MessageStatus,
-			// 			Payload: string(data),
-			// 		}
-			// 	}
-			// }
 		}
 
 	}

@@ -56,6 +56,8 @@ func Test_dialogService_SendNewMessage(t *testing.T) {
 				err := json.Unmarshal(e.Payload, &sendMessageEvent)
 				require.NoError(t, err)
 
+				createTime := time.Now()
+
 				mockStorage.EXPECT().GetByID(context.Background(), gomock.Eq(int64(msgID))).
 					Return(entity.Message{
 						ID:        msgID,
@@ -63,22 +65,22 @@ func Test_dialogService_SendNewMessage(t *testing.T) {
 						Receiver:  c.ReceiverLogin,
 						Text:      sendMessageEvent.Text,
 						Status:    entity.SENT,
-						Timestamp: time.Now(),
+						Timestamp: createTime,
 					}, nil).AnyTimes().After(
 
-					mockStorage.EXPECT().Create(context.TODO(), entity.Message{
-						Sender:    c.SenderLogin,
-						Receiver:  c.ReceiverLogin,
-						Text:      sendMessageEvent.Text,
-						Status:    entity.SENT,
-						Timestamp: time.Now(),
-					}).Return(entity.Message{
+					mockStorage.EXPECT().Create(context.TODO(), gomock.Eq(entity.Message{
+						Sender:   c.SenderLogin,
+						Receiver: c.ReceiverLogin,
+						Text:     sendMessageEvent.Text,
+						Status:   entity.SENT,
+						// Timestamp: time.Now(),
+					})).Return(entity.Message{
 						ID:        msgID,
 						Sender:    c.SenderLogin,
 						Receiver:  c.ReceiverLogin,
 						Text:      sendMessageEvent.Text,
 						Status:    entity.SENT,
-						Timestamp: time.Now(),
+						Timestamp: createTime,
 					}, nil),
 				)
 			},
@@ -118,11 +120,11 @@ func Test_dialogService_SendNewMessage(t *testing.T) {
 					}, nil).AnyTimes().After(
 
 					mockStorage.EXPECT().Create(context.TODO(), entity.Message{
-						Sender:    c.SenderLogin,
-						Receiver:  c.ReceiverLogin,
-						Text:      sendMessageEvent.Text,
-						Status:    entity.SENT,
-						Timestamp: createTime,
+						Sender:   c.SenderLogin,
+						Receiver: c.ReceiverLogin,
+						Text:     sendMessageEvent.Text,
+						Status:   entity.SENT,
+						// Timestamp: createTime,
 					}).Return(entity.Message{
 						ID:        msgID,
 						Sender:    c.SenderLogin,

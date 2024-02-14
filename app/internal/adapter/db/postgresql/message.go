@@ -3,6 +3,7 @@ package postgresql
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	// stdErrors "errors"
 	"github.com/The-Gleb/gmessenger/app/internal/adapter/db/sqlc"
@@ -67,7 +68,7 @@ func (ms *messageStorage) Create(ctx context.Context, msg entity.Message) (entit
 			Valid:  true,
 		},
 		CreatedAt: pgtype.Timestamp{
-			Time:  msg.Timestamp,
+			Time:  time.Now(),
 			Valid: true,
 		},
 	})

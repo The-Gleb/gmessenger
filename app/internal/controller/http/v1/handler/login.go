@@ -89,6 +89,10 @@ func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rw.Write(b)
+	_, err = rw.Write(b)
+	if err != nil {
+		http.Error(rw, " error writing to body", http.StatusInternalServerError)
+		return
+	}
 
 }
