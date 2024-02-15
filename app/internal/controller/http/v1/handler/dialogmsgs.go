@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	v1 "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	dialogmsgs_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/dialogmsgs"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
@@ -52,7 +53,7 @@ func (h *dialogMsgsHandler) Middlewares(md ...func(http.Handler) http.Handler) *
 func (h *dialogMsgsHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	slog.Debug("dialogMsgsHandler working")
 
-	login, ok := r.Context().Value("userLogin").(string)
+	login, ok := r.Context().Value(v1.Key("userLogin")).(string)
 	if !ok {
 		slog.Error("cannot get userLogin")
 		http.Error(rw, "cannot get userLogin", http.StatusInternalServerError)

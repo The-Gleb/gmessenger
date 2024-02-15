@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	v1 "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	groupmsgs_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/groupmsgs"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
@@ -53,7 +54,7 @@ func (h *groupMsgsHandler) Middlewares(md ...func(http.Handler) http.Handler) *g
 func (h *groupMsgsHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	slog.Debug("groupMsgsHandler working")
 
-	login, ok := r.Context().Value("userLogin").(string)
+	login, ok := r.Context().Value(v1.Key("userLogin")).(string)
 	if !ok {
 		slog.Error("cannot get userLogin")
 		http.Error(rw, "cannot get userLogin", http.StatusInternalServerError)

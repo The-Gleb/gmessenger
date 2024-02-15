@@ -53,6 +53,10 @@ func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "[loginHandler.Login]: error parsing json to dto", http.StatusBadRequest)
 		return
 	}
+	if d.Login == "" || d.Password == "" {
+		http.Error(rw, "[loginHandler.Login]:", http.StatusBadRequest)
+		return
+	}
 
 	slog.Debug("LoginDTO", "struct", d)
 

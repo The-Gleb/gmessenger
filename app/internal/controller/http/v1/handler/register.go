@@ -54,7 +54,12 @@ func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&d)
 	if err != nil {
 		slog.Error("[registerHandler.Register]: error parsing json to dto", "error", err)
-		http.Error(rw, "[registerHandler.Register]: error parsing json to dto", http.StatusInternalServerError)
+		http.Error(rw, "[registerHandler.Register]: error parsing json to dto", http.StatusBadRequest)
+		return
+	}
+
+	if d.Login == "" || d.Password == "" || d.UserName == "" {
+		http.Error(rw, "[loginHandler.Login]:", http.StatusBadRequest)
 		return
 	}
 
@@ -73,7 +78,7 @@ func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 			http.Error(rw, err.Error(), http.StatusConflict)
 			return
 		default:
-			http.Error(rw, err.Error(), http.StatusBadRequest)
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}

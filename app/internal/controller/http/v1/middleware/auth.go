@@ -8,7 +8,7 @@ import (
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
 )
 
-type key string
+type Key string
 
 type AuthUsecase interface {
 	Auth(ctx context.Context, token string) (string, error)
@@ -32,6 +32,7 @@ func (m *authMiddleWare) Http(next http.Handler) http.Handler {
 			return
 		}
 		slog.Debug("Cookie is", "cookie", c.Value)
+
 		userLogin, err := m.usecase.Auth(r.Context(), c.Value)
 		if err != nil {
 			slog.Debug("got userlogig from auth usecase", "login", userLogin)
@@ -40,8 +41,8 @@ func (m *authMiddleWare) Http(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), key("userLogin"), userLogin)
-		ctx = context.WithValue(ctx, key("token"), c.Value)
+		ctx := context.WithValue(r.Context(), Key("userLogin"), userLogin)
+		ctx = context.WithValue(ctx, Key("token"), c.Value)
 
 		r = r.WithContext(ctx)
 
@@ -68,8 +69,8 @@ func (m *authMiddleWare) Websocket(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), key("userLogin"), userLogin)
-		ctx = context.WithValue(ctx, key("token"), token)
+		ctx := context.WithValue(r.Context(), Key("userLogin"), userLogin)
+		ctx = context.WithValue(ctx, Key("token"), token)
 
 		r = r.WithContext(ctx)
 

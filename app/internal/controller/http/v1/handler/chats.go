@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	v1 "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"github.com/go-chi/chi/v5"
 )
@@ -43,10 +44,10 @@ func (h *chatsHandler) Middlewares(md ...func(http.Handler) http.Handler) *chats
 func (h *chatsHandler) ShowChats(rw http.ResponseWriter, r *http.Request) {
 	slog.Debug("in chat handler")
 
-	login, ok := r.Context().Value("userLogin").(string)
+	login, ok := r.Context().Value(v1.Key("userLogin")).(string)
+	slog.Info(login)
 	if !ok {
-		slog.Error("cannot get userLogin")
-		http.Error(rw, "cannot get userLogin", http.StatusInternalServerError)
+		http.Error(rw, "cannot get userLogin "+login, http.StatusInternalServerError)
 		return
 	}
 
