@@ -1,4 +1,4 @@
-# Gmessenger
+# Telegleb
 Chat application server
 
 ## How to start
