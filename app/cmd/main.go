@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"sync"
 	"syscall"
 
@@ -86,6 +85,19 @@ func main() {
 
 	th := &templateHandler{fileName: "index.html"}
 	r.Get("/", th.ServeHTTP)
+	// h := func(w http.ResponseWriter, r *http.Request) {
+	// 	templ := template.Must(template.ParseFiles("./cmd/index.html"))
+
+	// 	err = templ.Execute(w, nil)
+	// 	if err != nil {
+	// 		slog.Error(err.Error())
+	// 	}
+	// }
+	// http.Handle("/", http.HandlerFunc(h))
+	// err = http.ListenAndServe(":8081", nil)
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// }
 
 	loginHandler.AddToRouter(r)
 	registerHandler.AddToRouter(r)
@@ -131,7 +143,7 @@ type templateHandler struct {
 func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("requst pointer", "pointer", r)
 	t.once.Do(func() {
-		t.templ = template.Must(template.ParseFiles((filepath.Join("./cmd/templates", t.fileName))))
+		t.templ = template.Must(template.ParseFiles("./app/cmd/index.html"))
 	})
 
 	err := t.templ.Execute(w, nil)

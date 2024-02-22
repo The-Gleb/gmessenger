@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
@@ -67,8 +68,14 @@ func (ds *dialogService) RouteEvent(event entity.Event, senderClient *client.Cli
 
 func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 
+	slog.Info(string(event.Payload))
+
+	p := strings.Trim(string(event.Payload), "\"")
+	p = strings.ReplaceAll(p, "\\", "")
+	slog.Info(p)
+
 	var chatevent entity.SendMessageEvent
-	if err := json.Unmarshal(event.Payload, &chatevent); err != nil {
+	if err := json.Unmarshal([]byte(p), &chatevent); err != nil {
 		client.CloseWSConnection(c.Conn, websocket.CloseInvalidFramePayloadData)
 		slog.Error("cannot unmarshal json to SendDialogMessageEvent", "error", err.Error())
 		return

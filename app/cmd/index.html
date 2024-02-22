@@ -1,61 +1,3 @@
-<!-- <html>
-  <head>
-    <title>Chat</title>
-    <style>
-
-      input { display: block; }
-      ul    { list-style: none; }
-
-    </style>
-  </head>
-  <body>
-
-    <ul id="messages"></ul>
-    <form id="chatbox">
-      <textarea></textarea>
-      <input type="submit" value="Send" />
-    </form>
-
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <script>
-
-      $(function(){
-
-        var socket = null;
-        var msgBox = $("#chatbox textarea");
-        var messages = $("#messages");
-
-        $("#chatbox").submit(function(){
-
-          if (!msgBox.val()) return false;
-          if (!socket) {
-            alert("Error: There is no socket connection.");
-            return false;
-          }
-
-          socket.send(msgBox.val());
-          msgBox.val("");
-          return false;
-
-        });
-
-        if (!window["WebSocket"]) {
-          alert("Error: Your browser does not support web sockets.")
-        } else {
-          socket = new WebSocket("ws://" + document.location.host + "/dialog/login2?token=" + "015a1dbc-7c88-4489-9b3f-886467bdf361")
-          socket.onclose = function() {
-            alert("Connection has been closed.");
-          }
-          socket.onmessage = function(e) {
-            messages.append($("<li>").text(e.data));
-          }
-        }
-
-      });
-
-    </script>
-  </body>
-</html> -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -183,10 +125,12 @@
             switch (event.type) {
                 case "new_message":
                     // Format payload
+                    
                     var msgEvent = new NewMessageEvent
+                    console.log("event payload is", event.payload)
+
                     msgEvent = JSON.parse(event.payload)
-                    console.log("event payload is", msgEvent)
-                    const messageEvent = Object.assign(new NewMessageEvent, event.payload);
+                    // const messageEvent = Object.assign(new NewMessageEvent, event.payload);
 
                     appendChatMessage(msgEvent);
                     break;
@@ -244,7 +188,7 @@
             var newmessage = document.getElementById("message");
             if (newmessage != null) {
                 let outgoingEvent = new SendMessageEvent(newmessage.value);
-                sendEvent("send_message", outgoingEvent)
+                sendEvent("send_message", JSON.stringify(outgoingEvent))
             }
             return false;
         }
@@ -256,8 +200,7 @@
          * */
         function sendEvent(eventName, payload) {
             // Create a event Object with a event named send_message
-            const event = new Event(eventName, JSON.stringify(payload));
-
+            const event = new Event(eventName, payload);
             console.log(JSON.stringify(event))
             // Format as JSON and send
             conn.send(JSON.stringify(event));

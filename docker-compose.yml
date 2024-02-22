@@ -47,6 +47,8 @@ services:
       - GATEWAY_DB_PASS=${GATEWAY_POSTGRES_PASSWORD}
       - GROUP_SERVICE_HOST=group_service
       - GROUP_SERVICE_PORT=8081
+      - LOGLEVEL=debug
+    
 
     ports:
       - 8080:8080
@@ -66,8 +68,8 @@ services:
 
   gateway_db_migrate:
     image: migrate/migrate
-    # depends_on:
-    #   - gateway_db
+    depends_on:
+      - gateway_db
     env_file:
       - .env
     volumes:
@@ -105,8 +107,8 @@ services:
 
   group_service_db_migrate:
     image: migrate/migrate
-    # depends_on:
-    #   - group_service_db
+    depends_on:
+      - group_service_db
     env_file:
       - .env
     volumes:

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
@@ -50,8 +51,9 @@ func (gh *groupHub) AddClient(c *client.Client) {
 		return
 	}
 
+	c.Hub = gh
+
 	gh.mu.Lock()
-	defer gh.mu.Unlock()
 
 	room, ok := gh.Rooms[c.GroupID]
 	if !ok {
@@ -60,6 +62,7 @@ func (gh *groupHub) AddClient(c *client.Client) {
 			Clients: make(map[string]ClientSessions),
 		}
 		gh.Rooms[c.GroupID] = room
+		slog.Debug("room created", "id", c.GroupID)
 	}
 
 	clientSessions, ok := room.Clients[c.SenderLogin]
@@ -70,6 +73,7 @@ func (gh *groupHub) AddClient(c *client.Client) {
 	}
 
 	clientSessions[c.SessionToken] = c
+	gh.mu.Unlock()
 
 	go c.WriteMessage()
 	c.ReadMessage()
@@ -83,7 +87,7 @@ func (gh *groupHub) RemoveClient(c *client.Client) {
 
 	delete(gh.Rooms[c.GroupID].Clients[c.SenderLogin], c.SessionToken)
 
-	client.CloseWSConnection(c.Conn, websocket.CloseNormalClosure)
+	// client.CloseWSConnection(c.Conn, websocket.CloseNormalClosure)
 
 	if len(gh.Rooms[c.GroupID].Clients[c.SenderLogin]) == 0 {
 		delete(gh.Rooms[c.GroupID].Clients, c.SenderLogin)
@@ -106,8 +110,14 @@ func (gh *groupHub) RouteEvent(event entity.Event, senderClient *client.Client) 
 
 func (gh *groupHub) SendNewMessage(event entity.Event, senderClient *client.Client) {
 
+	slog.Info(string(event.Payload))
+
+	p := strings.Trim(string(event.Payload), "\"")
+	p = strings.ReplaceAll(p, "\\", "")
+	slog.Info(p)
+
 	var chatevent entity.SendMessageEvent
-	if err := json.Unmarshal(event.Payload, &chatevent); err != nil {
+	if err := json.Unmarshal([]byte(p), &chatevent); err != nil {
 		client.CloseWSConnection(senderClient.Conn, websocket.CloseInvalidFramePayloadData)
 		slog.Error("cannot unmarshal json to SendDialogMessageEvent", "error", err.Error())
 		return
@@ -144,6 +154,8 @@ func (gh *groupHub) SendNewMessage(event entity.Event, senderClient *client.Clie
 	outgoingEvent.Payload = data
 	outgoingEvent.Type = entity.NewMessage
 
+	slog.Debug("rooms", "rooms", gh.Rooms)
+	slog.Debug("rooms clients", "clients", gh.Rooms[newMessage.GetGroupId()].Clients)
 	gh.mu.RLock()
 	for _, userSessions := range gh.Rooms[newMessage.GetGroupId()].Clients {
 		for _, session := range userSessions {

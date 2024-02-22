@@ -88,7 +88,7 @@ func (ms *messageStorage) Create(ctx context.Context, msg entity.Message) (entit
 
 }
 
-func (ms *messageStorage) GetByUsers(ctx context.Context, sender, receiver string) ([]entity.Message, error) {
+func (ms *messageStorage) GetByUsers(ctx context.Context, sender, receiver string, limit, offset int) ([]entity.Message, error) {
 	sqlcMessages, err := ms.sqlc.GetMessagesByUsers(ctx, sqlc.GetMessagesByUsersParams{
 		Sender: pgtype.Text{
 			String: sender,
@@ -98,6 +98,8 @@ func (ms *messageStorage) GetByUsers(ctx context.Context, sender, receiver strin
 			String: receiver,
 			Valid:  true,
 		},
+		Limit:  int32(limit),
+		Offset: int32(offset),
 	})
 	if err != nil {
 		slog.Error("error getting messages from db", "error", err.Error())

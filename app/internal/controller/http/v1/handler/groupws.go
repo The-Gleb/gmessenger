@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	v1 "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
 	groupws_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/groupws"
 	"github.com/go-chi/chi/v5"
@@ -55,13 +56,13 @@ func (h *groupWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "cannot get userLogin", http.StatusInternalServerError)
 		return
 	}
-	login, ok := r.Context().Value("userLogin").(string)
+	login, ok := r.Context().Value(v1.Key("userLogin")).(string)
 	if !ok {
 		slog.Error("cannot get userLogin")
 		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
-	token, ok := r.Context().Value("token").(string)
+	token, ok := r.Context().Value(v1.Key("token")).(string)
 	if !ok {
 		slog.Error("[handler.OpenGroup]: couldn't get session token from context")
 		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
