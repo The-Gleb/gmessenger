@@ -19,7 +19,6 @@ type InputProps = {
   placeholder?: string
   autocomplete?: string
   errorMessages?: ErrorObject[]
-  clearable?: boolean
   required?: boolean
 }
 
@@ -43,7 +42,6 @@ const props = withDefaults(defineProps<InputProps>(), {
   placeholder: '',
   autocomplete: undefined,
   errorMessages: undefined,
-  clearable: true,
   required: false
 })
 const emit = defineEmits<InputEmits>()
@@ -57,10 +55,6 @@ const updatedValue = computed({
   set(value: string) {
     emit('update:modelValue', value)
   }
-})
-
-const isFilled = computed(() => {
-  return props.modelValue.length
 })
 
 const inputLabel = ref<HTMLLabelElement | null>(null)
@@ -85,7 +79,6 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
     class="ui-input"
     :class="[
       {
-        'ui-input_filled': isFilled,
         'ui-input_slot-prepend': hasPrependSlot,
         'ui-input_slot-append': hasAppendSlot,
         'ui-input_disabled': disabled,
@@ -93,7 +86,10 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
       }
     ]"
   >
-    <div v-if="label" class="ui-input__title">{{ label }}<span v-if="required">*</span></div>
+    <div v-if="label" class="ui-input__title">
+      {{ label }}
+      <span v-if="required">*</span>
+    </div>
     <label class="ui-input__inner">
       <slot name="prepend">
         <component
@@ -129,13 +125,6 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
             <BaseIcon :icon="appendIcon" size="16" />
           </component>
         </slot>
-        <button
-          v-if="clearable && modelValue.length"
-          class="ui-input__icon"
-          @click="emit('update:modelValue', '')"
-        >
-          <BaseIcon icon="delete" size="16" />
-        </button>
       </div>
     </label>
   </div>
@@ -146,14 +135,14 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
   @include text-small-12s;
 
   &__title {
-    color: var(--text-primary);
+    color: var(--vt-c-white-mute);
     margin-bottom: 4px;
     transition: var(--transition) color;
 
     @include text-14s;
 
     span {
-      color: var(--text-active-accent);
+      color: var(--vt-c-red);
     }
   }
 
@@ -161,9 +150,9 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
     width: 100%;
     height: 40px;
     padding: 0 8px;
-    border: 1px solid var(--text-disabled);
+    border: 1px solid var(--vt-c-white-mute);
     border-radius: 6px;
-    background-color: var(--bg-default);
+    background-color: var(--vt-c-dark-green);
     display: flex;
     align-items: center;
     cursor: text;
@@ -177,10 +166,10 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
       background-color: transparent;
       width: 100%;
       outline: none;
-      color: var(--text-primary);
+      color: var(--vt-c-white);
 
       &::placeholder {
-        color: var(--text-tertiary);
+        color: var(--vt-c-white-mute);
       }
     }
   }
@@ -204,21 +193,21 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
 
   &_disabled {
     .ui-input__inner {
-      background-color: var(--text-disabled);
+      background-color: var(--vt-c-white-mute);
     }
   }
 
   &_error {
     .ui-input__title {
-      color: var(--text-red);
+      color: var(--vt-c-red);
     }
 
     .ui-input__inner {
-      border-color: var(--text-red);
+      border-color: var(--vt-c-red);
     }
 
     .ui-input__details {
-      color: var(--text-red);
+      color: var(--vt-c-red);
     }
   }
 }

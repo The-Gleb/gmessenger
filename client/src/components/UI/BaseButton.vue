@@ -23,10 +23,6 @@ const props = withDefaults(defineProps<Props>(), {
   type: 'button'
 })
 
-const isOnlyIcon = computed(() => {
-  return !!props.icon
-})
-
 const isLink = computed(() => {
   return !!props.to
 })
@@ -40,19 +36,11 @@ const componentButton = computed(() => {
   <component
     :is="componentButton"
     class="ui-button"
-    :class="[
-      {
-        'ui-button_icon': isOnlyIcon,
-        'ui-button_btn': !isOnlyIcon,
-        'ui-button_block': block
-      },
-      `ui-button_${variant}`
-    ]"
+    :class="[{ 'ui-button_block': block }, `ui-button_${variant}`]"
     :to="to || undefined"
     :disabled="disabled"
   >
     <BaseIcon v-if="prependIcon" class="ui-button__prepend-icon" :icon="prependIcon" />
-    <BaseIcon v-if="isOnlyIcon" :icon="icon" />
     <span v-else>
       <slot />
     </span>
@@ -63,7 +51,7 @@ const componentButton = computed(() => {
 <style lang="scss" scoped>
 .ui-button {
   padding: 12px 16px;
-  border-radius: 32px;
+  border-radius: 8px;
   transition:
     var(--transition) background-color,
     var(--transition) color,
@@ -72,21 +60,17 @@ const componentButton = computed(() => {
   @include text-14s;
 
   &_default {
-    background-color: var(--icons-red);
-    box-shadow: var(--shadow-red);
-    color: var(--bg-default);
+    background-color: var(--vt-c-green);
+    color: var(--vt-c-white);
+    box-shadow: var(--shadow);
 
     &:hover {
-      background-color: #e46e63;
-    }
-
-    &:active {
-      background-color: var(--text-tapped);
+      background-color: var(--vt-c-green);
     }
 
     &:disabled {
-      background-color: var(--text-disabled);
-      color: var(--text-tertiary);
+      background-color: var(--vt-c-white-mute);
+      color: var(--vt-c-black-mute);
     }
   }
 
