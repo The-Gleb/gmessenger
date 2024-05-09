@@ -2,10 +2,9 @@ package v1
 
 import (
 	"context"
-	"html/template"
+	"encoding/json"
 	"log/slog"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -130,28 +129,17 @@ func (h *dialogMsgsHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	workDir, _ := os.Getwd()
+	b, err := json.Marshal(testMessages)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	templ := template.Must(template.ParseFiles(workDir + "/app/cmd/templates/dialog/dialog.html"))
-
-	data := struct {
-		Messages []entity.Message
-		UserID   int64
-	}{testMessages, userID}
-
-	err = templ.Execute(rw, data)
-
-	//b, err := json.Marshal(messages)
-	//if err != nil {
-	//	slog.Error(err.Error())
-	//	http.Error(rw, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//_, err = rw.Write(b)
-	//if err != nil {
-	//	http.Error(rw, " error writing to body", http.StatusInternalServerError)
-	//	return
-	//}
+	_, err = rw.Write(b)
+	if err != nil {
+		http.Error(rw, " error writing to body", http.StatusInternalServerError)
+		return
+	}
 
 }
