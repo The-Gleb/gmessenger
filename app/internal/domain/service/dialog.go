@@ -13,14 +13,14 @@ import (
 )
 
 type dialogService struct {
-	ClientList     map[string]ClientSessions
+	ClientList     map[int64]ClientSessions
 	messageStorage MessageStorage
 	mu             sync.RWMutex
 }
 
 func NewDialogService(ms MessageStorage) *dialogService {
 	return &dialogService{
-		ClientList:     make(map[string]ClientSessions),
+		ClientList:     make(map[int64]ClientSessions),
 		messageStorage: ms,
 	}
 }
@@ -29,13 +29,13 @@ func (ds *dialogService) AddClient(c *client.Client) {
 
 	ds.mu.Lock()
 	c.Hub = ds
-	if _, ok := ds.ClientList[c.SenderLogin]; !ok {
-		ds.ClientList[c.SenderLogin] = make(map[string]*client.Client)
+	if _, ok := ds.ClientList[c.SenderID]; !ok {
+		ds.ClientList[c.SenderID] = make(map[string]*client.Client)
 	}
-	ds.ClientList[c.SenderLogin][c.SessionToken] = c
+	ds.ClientList[c.SenderID][c.SessionToken] = c
 	ds.mu.Unlock()
 
-	slog.Debug("client added to the list", "struct", ds.ClientList[c.SenderLogin][c.SessionToken])
+	slog.Debug("client added to the list", "struct", ds.ClientList[c.SenderID][c.SessionToken])
 
 	go c.WriteMessage()
 	c.ReadMessage()
@@ -47,10 +47,10 @@ func (ds *dialogService) RemoveClient(c *client.Client) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	delete(ds.ClientList[c.SenderLogin], c.SessionToken)
+	delete(ds.ClientList[c.SenderID], c.SessionToken)
 
-	if len(ds.ClientList[c.SenderLogin]) == 0 {
-		delete(ds.ClientList, c.SenderLogin)
+	if len(ds.ClientList[c.SenderID]) == 0 {
+		delete(ds.ClientList, c.SenderID)
 	}
 
 	client.CloseWSConnection(c.Conn, websocket.CloseNormalClosure)
@@ -82,10 +82,10 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 	}
 
 	newMessage, err := ds.messageStorage.Create(context.TODO(), entity.Message{
-		Sender:   c.SenderLogin,
-		Receiver: c.ReceiverLogin,
-		Text:     chatevent.Text,
-		Status:   entity.SENT,
+		SenderID:   c.SenderID,
+		ReceiverID: c.ReceiverID,
+		Text:       chatevent.Text,
+		Status:     entity.SENT,
 		// Timestamp: time.Now(),
 	})
 	if err != nil {
@@ -99,7 +99,7 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 	messageToSend.ID = newMessage.ID
 	messageToSend.Status = newMessage.Status
 	messageToSend.Text = newMessage.Text
-	messageToSend.SenderLogin = newMessage.Sender
+	messageToSend.SenderID = newMessage.SenderID
 	messageToSend.CreatedAt = newMessage.Timestamp
 
 	data, err := json.Marshal(messageToSend)
@@ -115,13 +115,13 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 	outgoingEvent.Type = entity.NewMessage
 
 	ds.mu.RLock()
-	for _, client := range ds.ClientList[c.SenderLogin] {
+	for _, client := range ds.ClientList[c.SenderID] {
 		client.Message <- outgoingEvent
 	}
 
-	receiverSessions, ok := ds.ClientList[c.ReceiverLogin]
+	receiverSessions, ok := ds.ClientList[c.ReceiverID]
 	if !ok || len(receiverSessions) == 0 {
-		slog.Debug("receiver has no active sessions", "receiver login", c.ReceiverLogin)
+		slog.Debug("receiver has no active sessions", "receiver login", c.ReceiverID)
 		return
 	}
 
@@ -130,7 +130,7 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 	// 	Status: entity.SENT,
 	// }
 	for _, receiver := range receiverSessions {
-		if receiver.ReceiverLogin == c.SenderLogin {
+		if receiver.ReceiverID == c.SenderID {
 
 			outgoingEvent.Type = entity.NewMessage
 			receiver.Message <- outgoingEvent
@@ -142,7 +142,7 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 			// 		slog.Error(err.Error()) // TODO
 			// 		return fmt.Errorf("failed to marshal updateStatusEvent message: %v", err)
 			// 	}
-			// 	for _, client := range ds.ClientList[c.SenderLogin] {
+			// 	for _, client := range ds.ClientList[c.SenderID] {
 			// 		client.Message <- entity.Event{
 			// 			Type:    entity.MessageStatus,
 			// 			Payload: string(data),

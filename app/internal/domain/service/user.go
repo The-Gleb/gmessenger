@@ -7,12 +7,13 @@ import (
 )
 
 type UserStorage interface {
-	Create(ctx context.Context, user entity.User) (entity.User, error)
-	GetByLogin(ctx context.Context, login string) (entity.User, error)
-	GetPassword(ctx context.Context, login string) (string, error)
-	GetAllUsernames(ctx context.Context) ([]string, error)
+	GetOrCreateByEmail(ctx context.Context, email string) (int64, bool, error)
+	SetUsername(ctx context.Context, dto entity.SetUsernameDTO) error
+	CreateWithPassword(ctx context.Context, dto entity.RegisterUserDTO) (int64, error)
+	GetByEmail(ctx context.Context, email string) (entity.User, error)
+	GetAllUsersView(ctx context.Context) ([]entity.UserView, error)
 
-	GetChatsView(ctx context.Context, userLogin string) ([]entity.Chat, error)
+	GetChatsView(ctx context.Context, userID int64) ([]entity.Chat, error)
 }
 
 type UserService struct {
@@ -23,22 +24,26 @@ func NewUserService(s UserStorage) *UserService {
 	return &UserService{repo: s}
 }
 
-func (us *UserService) GetByLogin(ctx context.Context, login string) (entity.User, error) {
-	return us.repo.GetByLogin(ctx, login)
+func (us *UserService) GetByEmail(ctx context.Context, email string) (entity.User, error) {
+	return us.repo.GetByEmail(ctx, email)
 }
 
-func (us *UserService) Create(ctx context.Context, user entity.User) (entity.User, error) {
-	return us.repo.Create(ctx, user)
+func (us *UserService) CreateWithPassword(ctx context.Context, dto entity.RegisterUserDTO) (int64, error) {
+	return us.repo.CreateWithPassword(ctx, dto)
 }
 
-func (us *UserService) GetPassword(ctx context.Context, login string) (string, error) {
-	return us.repo.GetPassword(ctx, login)
+func (us *UserService) GetOrCreateByEmail(ctx context.Context, email string) (int64, bool, error) {
+	return us.repo.GetOrCreateByEmail(ctx, email)
 }
 
-func (us *UserService) GetAllUsernames(ctx context.Context) ([]string, error) {
-	return us.repo.GetAllUsernames(ctx)
+func (us *UserService) SetUsername(ctx context.Context, dto entity.SetUsernameDTO) error {
+	return us.repo.SetUsername(ctx, dto)
 }
 
-func (us *UserService) GetChatsView(ctx context.Context, userLogin string) ([]entity.Chat, error) {
-	return us.repo.GetChatsView(ctx, userLogin)
+func (us *UserService) GetAllUsersView(ctx context.Context) ([]entity.UserView, error) {
+	return us.repo.GetAllUsersView(ctx)
+}
+
+func (us *UserService) GetChatsView(ctx context.Context, userID int64) ([]entity.Chat, error) {
+	return us.repo.GetChatsView(ctx, userID)
 }

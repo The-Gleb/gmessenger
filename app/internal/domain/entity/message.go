@@ -9,12 +9,13 @@ const (
 )
 
 type Message struct {
-	ID        int64     `json:"id"`
-	Sender    string    `json:"sender"`
-	Receiver  string    `json:"receiver"`
-	Text      string    `json:"text"`
-	Status    string    `json:"status"`
-	Timestamp time.Time `json:"time"`
+	ID         int64     `json:"id"`
+	SenderID   int64     `json:"sender_id"`
+	SenderName string    `json:"sender_name"`
+	ReceiverID int64     `json:"receiver_id"`
+	Text       string    `json:"text"`
+	Status     string    `json:"status"`
+	Timestamp  time.Time `json:"time"`
 }
 
 // move to service

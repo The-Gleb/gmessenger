@@ -3,6 +3,7 @@ package register_usecase
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
@@ -10,60 +11,49 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type SessionService interface {
+type sessionService interface {
 	Create(ctx context.Context, session entity.Session) error
-	GetLoginByToken(ctx context.Context, token string) (entity.Session, error)
-	Delete(ctx context.Context, token string) error
 }
 
-type UserService interface {
-	Create(ctx context.Context, user entity.User) (entity.User, error)
-	GetByLogin(ctx context.Context, login string) (entity.User, error)
-	GetPassword(ctx context.Context, login string) (string, error)
-	GetAllUsernames(ctx context.Context) ([]string, error)
+type userService interface {
+	CreateWithPassword(ctx context.Context, dto entity.RegisterUserDTO) (int64, error)
 }
 
 type registerUsecase struct {
-	userService    UserService
-	sessionService SessionService
+	userService    userService
+	sessionService sessionService
 }
 
-func NewRegisterUsecase(us UserService, ss SessionService) *registerUsecase {
+func NewRegisterUsecase(us userService, ss sessionService) *registerUsecase {
 	return &registerUsecase{us, ss}
 }
 
-func (r *registerUsecase) Register(ctx context.Context, registerUserDTO RegisterUserDTO) (entity.Session, error) {
+func (r *registerUsecase) Register(ctx context.Context, dto entity.RegisterUserDTO) (entity.Session, error) {
 
-	// err := json.NewDecoder(body).Decode(&createUserDTO)
-	// if err != nil {
-	// 	return "", time.Now(), errors.New("Register: couldn`t umarshall json")
-	// }
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerUserDTO.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return entity.Session{}, fmt.Errorf("[Register]: %w", err)
+		return entity.Session{}, fmt.Errorf("[usecase.Register]: %w", err)
 	}
-	registerUserDTO.Password = string(hashedPassword)
+	dto.Password = string(hashedPassword)
 
-	user, err := r.userService.Create(ctx, entity.User{
-		UserName: registerUserDTO.UserName,
-		Login:    registerUserDTO.Login,
-		Password: registerUserDTO.Password,
-	})
+	id, err := r.userService.CreateWithPassword(ctx, dto)
 	if err != nil {
-		return entity.Session{}, fmt.Errorf("[Register]: %w", err)
+		return entity.Session{}, fmt.Errorf("[usecase.Register]: %w", err)
 	}
 
+	slog.Debug("user created", "ID", id)
+
+	// TODO: JWT
 	newSession := entity.Session{
-		UserLogin: user.Login,
-		Token:     uuid.NewString(),
-		Expiry:    time.Now().Add(24 * time.Hour), // TODO config
+		UserID: id,
+		Token:  uuid.NewString(),
+		Expiry: time.Now().Add(24 * time.Hour), // TODO config
 	}
 
 	err = r.sessionService.Create(ctx, newSession)
 
 	if err != nil {
-		return entity.Session{}, fmt.Errorf("[Register]: %w", err)
+		return entity.Session{}, fmt.Errorf("[usecase.Register]: %w", err)
 	}
 
 	return newSession, nil

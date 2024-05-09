@@ -22,14 +22,15 @@ type Hub interface {
 }
 
 type Client struct {
-	Type          string
-	Conn          *websocket.Conn
-	Message       chan entity.Event
-	SenderLogin   string
-	SessionToken  string
-	ReceiverLogin string
-	GroupID       int64
-	Hub           Hub
+	Type         string
+	Conn         *websocket.Conn
+	Message      chan entity.Event
+	SenderID     int64
+	SenderName   string
+	SessionToken string
+	ReceiverID   int64
+	GroupID      int64
+	Hub          Hub
 }
 
 var (
