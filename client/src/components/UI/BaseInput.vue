@@ -1,0 +1,225 @@
+<script lang="ts" setup>
+import { computed, onMounted, ref, useSlots } from 'vue'
+import { type ErrorObject } from '@vuelidate/core'
+import BaseIcon from '@/components/UI/BaseIcon.vue'
+
+type InputProps = {
+  modelValue: string
+  prependIcon?: string
+  prependIconColor?: string
+  prependIconClickable?: boolean
+  appendIcon?: string
+  appendIconColor?: string
+  appendIconClickable?: boolean
+  label?: string
+  hint?: string
+  autofocus?: boolean
+  type?: string
+  disabled?: boolean
+  placeholder?: string
+  autocomplete?: string
+  errorMessages?: ErrorObject[]
+  clearable?: boolean
+  required?: boolean
+}
+
+type InputEmits = {
+  (e: 'update:modelValue', value: string): void
+  (e: 'click:prepend-icon', event: MouseEvent): void
+  (e: 'click:append-icon', event: MouseEvent): void
+  (e: 'focus', event: FocusEvent): void
+  (e: 'blur', event: FocusEvent): void
+}
+
+const props = withDefaults(defineProps<InputProps>(), {
+  prependIcon: undefined,
+  prependIconColor: 'text-secondary',
+  appendIcon: undefined,
+  appendIconColor: 'text-secondary',
+  label: undefined,
+  hint: undefined,
+  density: 'comfortable',
+  type: 'text',
+  placeholder: '',
+  autocomplete: undefined,
+  errorMessages: undefined,
+  clearable: true,
+  required: false
+})
+const emit = defineEmits<InputEmits>()
+
+const inputRef = ref<HTMLInputElement | null>(null)
+
+const updatedValue = computed({
+  get() {
+    return props.modelValue
+  },
+  set(value: string) {
+    emit('update:modelValue', value)
+  }
+})
+
+const isFilled = computed(() => {
+  return props.modelValue.length
+})
+
+const inputLabel = ref<HTMLLabelElement | null>(null)
+
+onMounted(() => {
+  if (props.autofocus) {
+    inputLabel.value?.focus()
+  }
+})
+
+const slots = useSlots()
+const hasPrependSlot = computed(() => slots.prepend)
+const hasAppendSlot = computed(() => slots.append)
+
+const getIconTag = (state: boolean) => (state ? 'button' : 'div')
+const prependIconTag = computed(() => getIconTag(props.prependIconClickable))
+const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
+</script>
+
+<template>
+  <div
+    class="ui-input"
+    :class="[
+      {
+        'ui-input_filled': isFilled,
+        'ui-input_slot-prepend': hasPrependSlot,
+        'ui-input_slot-append': hasAppendSlot,
+        'ui-input_disabled': disabled,
+        'ui-input_error': errorMessages?.length
+      }
+    ]"
+  >
+    <div v-if="label" class="ui-input__title">{{ label }}<span v-if="required">*</span></div>
+    <label class="ui-input__inner">
+      <slot name="prepend">
+        <component
+          :is="prependIconTag"
+          v-if="prependIcon"
+          class="ui-input__icon ui-input__icon_prepend"
+          :style="{ '--color': `var(--${prependIconColor})` }"
+          @click.stop="emit('click:prepend-icon', $event)"
+        >
+          <BaseIcon :icon="prependIcon" size="16" />
+        </component>
+      </slot>
+      <div class="ui-input__field">
+        <input
+          ref="inputRef"
+          v-model="updatedValue"
+          :type="type"
+          :placeholder="placeholder"
+          :autocomplete="autocomplete"
+          @focus="emit('focus', $event)"
+          @blur="emit('blur', $event)"
+        />
+      </div>
+      <div class="ui-input__icons_append">
+        <slot name="append">
+          <component
+            :is="appendIconTag"
+            v-if="appendIcon"
+            class="ui-input__icon ui-input__icon_append"
+            :style="{ '--color': `var(--${appendIconColor})` }"
+            @click.stop="emit('click:append-icon', $event)"
+          >
+            <BaseIcon :icon="appendIcon" size="16" />
+          </component>
+        </slot>
+        <button
+          v-if="clearable && modelValue.length"
+          class="ui-input__icon"
+          @click="emit('update:modelValue', '')"
+        >
+          <BaseIcon icon="delete" size="16" />
+        </button>
+      </div>
+    </label>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+.ui-input {
+  @include text-small-12s;
+
+  &__title {
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    transition: var(--transition) color;
+
+    @include text-14s;
+
+    span {
+      color: var(--text-active-accent);
+    }
+  }
+
+  &__inner {
+    width: 100%;
+    height: 40px;
+    padding: 0 8px;
+    border: 1px solid var(--text-disabled);
+    border-radius: 6px;
+    background-color: var(--bg-default);
+    display: flex;
+    align-items: center;
+    cursor: text;
+    transition: var(--transition) border-color;
+  }
+
+  &__field {
+    width: 100%;
+
+    > input {
+      background-color: transparent;
+      width: 100%;
+      outline: none;
+      color: var(--text-primary);
+
+      &::placeholder {
+        color: var(--text-tertiary);
+      }
+    }
+  }
+
+  &__icon {
+    flex: 0 0 16px;
+    color: var(--color);
+  }
+
+  &__icons {
+    &_append {
+      padding-left: 4px;
+      display: flex;
+      align-items: center;
+
+      > * + * {
+        margin-left: 12px;
+      }
+    }
+  }
+
+  &_disabled {
+    .ui-input__inner {
+      background-color: var(--text-disabled);
+    }
+  }
+
+  &_error {
+    .ui-input__title {
+      color: var(--text-red);
+    }
+
+    .ui-input__inner {
+      border-color: var(--text-red);
+    }
+
+    .ui-input__details {
+      color: var(--text-red);
+    }
+  }
+}
+</style>

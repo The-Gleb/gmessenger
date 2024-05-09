@@ -48,7 +48,7 @@ services:
       - LOGLEVEL=debug
 
     ports:
-      - 8080:8080
+      - "8081:8081"
     command: go run app/cmd/main.go
 
   gateway_db:
@@ -80,48 +80,48 @@ services:
         "up",
       ]
 
-  group_service:
-    build: ./group_service
-    ports:
-      - 8081:8081
-    depends_on:
-      - group_service_db
-    volumes:
-      - .:/usr/src/app
-    env_file:
-      - .env
-    environment:
-      - GROUP_LISTEN_ADDR=group_service:8081
-      - GROUP_DB_HOST=group_service_db
-      - GROUP_DB_PORT=5432
-      - GROUP_DB_NAME=${GROUP_POSTGRES_USER}
-      - GROUP_DB_USERNAME=${GROUP_POSTGRES_USER}
-      - GROUP_DB_PASS=${GROUP_POSTGRES_PASSWORD}
-    command: go run group_service/cmd/main.go
+  # group_service:
+  #   build: ./group_service
+  #   ports:
+  #     - 8081:8081
+  #   depends_on:
+  #     - group_service_db
+  #   volumes:
+  #     - .:/usr/src/app
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - GROUP_LISTEN_ADDR=group_service:8081
+  #     - GROUP_DB_HOST=group_service_db
+  #     - GROUP_DB_PORT=5432
+  #     - GROUP_DB_NAME=${GROUP_POSTGRES_USER}
+  #     - GROUP_DB_USERNAME=${GROUP_POSTGRES_USER}
+  #     - GROUP_DB_PASS=${GROUP_POSTGRES_PASSWORD}
+  #   command: go run group_service/cmd/main.go
 
-  group_service_db:
-    image: postgres:alpine
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_USER=${GROUP_POSTGRES_USER}
-      - POSTGRES_PASSWORD=${GROUP_POSTGRES_PASSWORD}
-    ports:
-      - 5433:5432
+  # group_service_db:
+  #   image: postgres:alpine
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - POSTGRES_USER=${GROUP_POSTGRES_USER}
+  #     - POSTGRES_PASSWORD=${GROUP_POSTGRES_PASSWORD}
+  #   ports:
+  #     - 5433:5432
 
-  group_service_db_migrate:
-    image: migrate/migrate
-    depends_on:
-      - group_service_db
-    env_file:
-      - .env
-    volumes:
-      - ./group_service/internal/adapter/db/migration:/migrations
-    command:
-      [
-        "-path",
-        "/migrations/",
-        "-database",
-        "postgres://${GROUP_POSTGRES_USER}:${GROUP_POSTGRES_PASSWORD}@group_service_db:5432/${GROUP_POSTGRES_USER}?sslmode=disable",
-        "up",
-      ]
+  # group_service_db_migrate:
+  #   image: migrate/migrate
+  #   depends_on:
+  #     - group_service_db
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./group_service/internal/adapter/db/migration:/migrations
+  #   command:
+  #     [
+  #       "-path",
+  #       "/migrations/",
+  #       "-database",
+  #       "postgres://${GROUP_POSTGRES_USER}:${GROUP_POSTGRES_PASSWORD}@group_service_db:5432/${GROUP_POSTGRES_USER}?sslmode=disable",
+  #       "up",
+  #     ]

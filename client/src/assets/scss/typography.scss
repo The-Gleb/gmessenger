@@ -1,0 +1,58 @@
+@mixin text-h1() {
+  font-size: 3rem;
+  line-height: 120%;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+@mixin text-h2() {
+  font-size: 1.5rem;
+  line-height: 100%;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+@mixin text-h3() {
+  font-size: 1rem;
+  line-height: 122.7%;
+  font-weight: 600;
+}
+
+@mixin text-h4() {
+  font-size: 1rem;
+  line-height: 150%;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+@mixin text-cargo-numbers() {
+  font-size: 0.875rem;
+  line-height: 115%;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+@mixin text-14r() {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0.02em;
+}
+
+@mixin text-14s() {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+
+@mixin text-small-12s() {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.02em;
+}
+
+@mixin text-ultra-small-10() {
+  font-size: 0.625rem;
+  line-height: 0.6875rem;
+  letter-spacing: 0.02em;
+}
