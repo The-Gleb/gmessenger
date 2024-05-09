@@ -6,9 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/The-Gleb/gmessenger/app/internal/controller/http/dto"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	register_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/register"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
 	"github.com/go-chi/chi/v5"
 )
@@ -18,7 +16,7 @@ const (
 )
 
 type RegisterUsecase interface {
-	Register(ctx context.Context, usecaseDTO register_usecase.RegisterUserDTO) (entity.Session, error)
+	Register(ctx context.Context, dto entity.RegisterUserDTO) (entity.Session, error)
 }
 
 type registerHandler struct {
@@ -48,33 +46,33 @@ func (h *registerHandler) Middlewares(md ...func(http.Handler) http.Handler) *re
 
 func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 
-	var d dto.RegisterUserDTO
+	var dto entity.RegisterUserDTO
 	defer r.Body.Close()
 
-	err := json.NewDecoder(r.Body).Decode(&d)
+	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
-		slog.Error("[registerHandler.Register]: error parsing json to dto", "error", err)
-		http.Error(rw, "[registerHandler.Register]: error parsing json to dto", http.StatusBadRequest)
+		slog.Error("[setUsernameHandler.Register]: error parsing json to dto", "error", err)
+		http.Error(rw, "[setUsernameHandler.Register]: error parsing json to dto", http.StatusBadRequest)
 		return
 	}
 
-	if d.Login == "" || d.Password == "" || d.UserName == "" {
+	if dto.Email == "" || dto.Password == "" || dto.Username == "" {
 		http.Error(rw, "[loginHandler.Login]:", http.StatusBadRequest)
 		return
 	}
 
-	slog.Debug("RegisterUserDTO", "struct", d)
+	slog.Debug("RegisterUserDTO", "struct", dto)
 
-	s, err := h.usecase.Register(r.Context(), register_usecase.RegisterUserDTO{
-		UserName: d.UserName,
-		Login:    d.Login,
-		Password: d.Password,
-	})
+	// TODO: verify email
+
+	// for now assume that email is verified
+
+	s, err := h.usecase.Register(r.Context(), dto)
 	if err != nil {
 		slog.Error(err.Error())
 
 		switch errors.Code(err) {
-		case errors.ErrDBLoginAlredyExists:
+		case errors.ErrDBLoginAlredyExists, errors.ErrUserExists:
 			http.Error(rw, err.Error(), http.StatusConflict)
 			return
 		default:
@@ -90,6 +88,8 @@ func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(rw, &c)
+
+	rw.WriteHeader(http.StatusOK)
 
 	// b, err := json.Marshal(s)
 	// if err != nil {

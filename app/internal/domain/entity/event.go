@@ -23,11 +23,11 @@ type SendMessageEvent struct {
 }
 
 type NewMessageEvent struct {
-	ID          int64     `json:"id"`
-	Status      string    `json:"status"`
-	Text        string    `json:"text"`
-	SenderLogin string    `json:"sender"`
-	CreatedAt   time.Time `json:"time"`
+	ID        int64     `json:"id"`
+	Status    string    `json:"status"`
+	Text      string    `json:"text"`
+	SenderID  int64     `json:"sender"`
+	CreatedAt time.Time `json:"time"`
 }
 
 type UpdateMessageStatusEvent struct {
@@ -40,11 +40,11 @@ type UpdateMessageStatusEvent struct {
 // }
 
 type UserActivityEvent struct {
-	UserLogin string `json:"user_login"`
+	UserID int64 `json:"user_login"`
 }
 
 type UpdateUserStatusEvent struct {
-	UserLogin string    `json:"user_login"`
-	IsOnline  bool      `json:"is_online"`
-	LastSeen  time.Time `json:"last_seen,omitempty"`
+	UserID   int64     `json:"user_login"`
+	IsOnline bool      `json:"is_online"`
+	LastSeen time.Time `json:"last_seen,omitempty"`
 }

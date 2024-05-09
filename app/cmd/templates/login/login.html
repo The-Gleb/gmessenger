@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gmessenger Login</title>
+<link rel="stylesheet" href="login.css">
+</head>
+<body>
+<div class="container">
+    <h1>Gmessenger Login</h1>
+    <form id="loginForm">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button type="submit">Login</button>
+    </form>
+    <a href="/static/register/register.html" class="signup">Sign Up</a>
+
+    <!-- <form class="social-login" action="http://localhost:8000/auth/google" method="get">
+        <input class="google-login" type="submit" value="Login with Google"/>
+    </form> -->
+
+    <div class="social-login">
+        <button class="google-login">Login with Google</button>
+        <button class="yandex-login">Login with Yandex</button>
+    </div>
+</div>
+<!--<script>-->
+<!--    document.getElementById('loginForm').addEventListener('submit', function(event) {-->
+<!--    event.preventDefault();-->
+<!--    -->
+<!--    let formData = {-->
+<!--        "login": document.getElementById("email").value,-->
+<!--        "password": document.getElementById("password").value-->
+<!--        // "login": "login1",-->
+<!--        // "password": "password1"-->
+<!--    }-->
+<!--    let receiver = document.getElementById("receiver").value;-->
+
+<!--    fetch("login", {-->
+<!--        method: 'post',-->
+<!--        body: JSON.stringify(formData),-->
+<!--        mode: 'cors',-->
+<!--    }).then((response) => {-->
+<!--        if (response.ok) {-->
+<!--            -->
+<!--            return response.json();-->
+<!--        } else {-->
+<!--            throw 'unauthorized';-->
+<!--        }-->
+<!--    }).catch((e) => { alert(e) });-->
+
+<!--    return false;-->
+<!--});-->
+
+<!--document.querySelector('.google-login').addEventListener('click', function() {-->
+<!--    window.location.href = "/auth/google"-->
+<!--});-->
+
+<!--document.querySelector('.yandex-login').addEventListener('click', function() {-->
+<!--    window.location.href = "/auth/yandex"-->
+<!--});-->
+<!--</script>-->
+<script src="login.js"></script>
+</body>
+</html>

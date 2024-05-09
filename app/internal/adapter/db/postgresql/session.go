@@ -3,6 +3,7 @@ package postgresql
 import (
 	"context"
 	stdErrors "errors"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
 	"log/slog"
 
 	"github.com/The-Gleb/gmessenger/app/internal/adapter/db/sqlc"
@@ -12,63 +13,64 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
+var _ service.SessionStorage = new(sessionStorage)
+
 type sessionStorage struct {
-	sqlc *sqlc.Queries
+	client postgresql.Client
+	sqlc   *sqlc.Queries
 }
 
 func NewSessionStorage(client postgresql.Client) *sessionStorage {
 	return &sessionStorage{
-		sqlc: sqlc.New(client),
+		client: client,
+		sqlc:   sqlc.New(client),
 	}
 }
 
 func (ss *sessionStorage) GetByToken(ctx context.Context, token string) (entity.Session, error) {
 
-	s, err := ss.sqlc.GetSessionByToken(ctx, token)
-	switch err {
-	default:
-		slog.Error(err.Error())
-		return entity.Session{}, errors.NewDomainError(errors.ErrDB, "[storage.GetByToken]: ")
-	case pgx.ErrNoRows:
-		slog.Error(err.Error())
-		return entity.Session{}, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetByToken]: session not found")
+	row := ss.client.QueryRow(
+		ctx,
+		`SELECT user_id, expiry FROM sessions WHERE session_token = $1`,
+		token,
+	)
 
-	case nil:
-		return entity.Session{
-			Token:     s.Token,
-			UserLogin: s.UserLogin.String,
-			Expiry:    s.Expiry.Time,
-		}, nil
+	session := entity.Session{
+		Token: token,
 	}
+	err := row.Scan(&session.UserID, &session.Expiry)
+	if err != nil {
+		slog.Error(err.Error())
+		if stdErrors.Is(err, pgx.ErrNoRows) {
+			return session, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetByToken]:")
+		}
+		return session, errors.NewDomainError(errors.ErrDB, "[storage.GetByToken]:")
+	}
+
+	return session, nil
 
 }
 
 func (ss *sessionStorage) Create(ctx context.Context, session entity.Session) error {
 
-	err := ss.sqlc.CreateSession(ctx, sqlc.CreateSessionParams{
-		Token: session.Token,
-		UserLogin: pgtype.Text{
-			String: session.UserLogin,
-			Valid:  true,
-		},
-		Expiry: pgtype.Timestamp{
-			Time:  session.Expiry,
-			Valid: true,
-		},
-	})
+	_, err := ss.client.Exec(
+		ctx,
+		`INSERT INTO sessions (user_id, session_token, expiry) VALUES ($1, $2, $3)`,
+		session.UserID, session.Token, session.Expiry,
+	)
 	if err != nil {
 		slog.Error(err.Error())
 		var pgErr *pgconn.PgError
 		if stdErrors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
-			return errors.NewDomainError(errors.ErrNotUniqueToken, "[storage.Create]: not unique token")
+			return errors.NewDomainError(errors.ErrNotUniqueToken, "[storage.Create]")
 		}
-		return errors.NewDomainError(errors.ErrDB, "[storage.Create]: ")
+		return errors.NewDomainError(errors.ErrDB, "[storage.Create]:")
 	}
 
 	return nil
+
 }
 
 func (ss *sessionStorage) Delete(ctx context.Context, token string) error {

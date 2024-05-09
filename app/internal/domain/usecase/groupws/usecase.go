@@ -29,7 +29,7 @@ func (u *groupWSUsecase) OpenGroup(ctx context.Context, dto OpenGroupDTO) error 
 		Type:         client.Group, // probably useless
 		Conn:         dto.Websocket,
 		Message:      make(chan entity.Event, 5),
-		SenderLogin:  dto.SenderLogin,
+		SenderID:     dto.SenderID,
 		SessionToken: dto.SenderToken,
 		GroupID:      dto.GroupID,
 	}

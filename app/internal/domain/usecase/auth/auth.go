@@ -8,9 +8,7 @@ import (
 )
 
 type SessionService interface {
-	Create(ctx context.Context, session entity.Session) error
-	GetLoginByToken(ctx context.Context, token string) (entity.Session, error)
-	Delete(ctx context.Context, token string) error
+	GetByToken(ctx context.Context, token string) (entity.Session, error)
 }
 
 type authUsecase struct {
@@ -21,12 +19,12 @@ func NewAuthUsecase(ss SessionService) *authUsecase {
 	return &authUsecase{ss}
 }
 
-func (uc *authUsecase) Auth(ctx context.Context, token string) (string, error) {
+func (uc *authUsecase) Auth(ctx context.Context, token string) (int64, error) {
 
-	session, err := uc.sessionService.GetLoginByToken(ctx, token)
+	session, err := uc.sessionService.GetByToken(ctx, token)
 	if err != nil {
-		return "", fmt.Errorf("[Auth]: %w", err)
+		return 0, fmt.Errorf("[Auth]: %w", err)
 	}
 
-	return session.UserLogin, nil
+	return session.UserID, nil
 }

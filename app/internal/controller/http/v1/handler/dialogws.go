@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	v1 "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
@@ -44,10 +45,6 @@ func (h *dialogWSHandler) AddToRouter(r *chi.Mux) {
 	}
 
 	r.Handle(dialogWSURL, handler)
-
-	// r.Handle(dialogURL, http.HandlerFunc(h.OpenDialog))
-	// r.Handle(dialogURL, h.middlewares[0](http.HandlerFunc(h.OpenDialog)))
-	slog.Debug("dialog handlers middlewares", "here they are", h.middlewares)
 }
 
 func (h *dialogWSHandler) Middlewares(md ...func(http.Handler) http.Handler) *dialogWSHandler {
@@ -64,7 +61,7 @@ func (h *dialogWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "[dialogWSHandler.ServeHTTP]: couldn't get session token from context", http.StatusInternalServerError)
 		return
 	}
-	login, ok := r.Context().Value(v1.Key("userLogin")).(string)
+	userID, ok := r.Context().Value(v1.Key("userID")).(int64)
 	if !ok {
 		slog.Error("cannot get userLogin")
 		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
@@ -77,11 +74,17 @@ func (h *dialogWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	receiverID, err := strconv.ParseInt(chi.URLParam(r, "receiverID"), 10, 64)
+	if err != nil {
+		slog.Error("[dialogWSHandler.ServeHTTP]: couldn't get receiverID", "error", err)
+		http.Error(rw, "", http.StatusBadRequest)
+	}
+
 	usecaseDTO := dialogws_usecase.OpenDialogDTO{
-		Websocket:     conn,
-		SenderLogin:   login,
-		ReceiverLogin: chi.URLParam(r, "receiverLogin"),
-		SenderToken:   token,
+		Websocket:   conn,
+		SenderID:    userID,
+		ReceiverID:  receiverID,
+		SenderToken: token,
 	}
 
 	slog.Debug("dialog usecase dto ", "struct", usecaseDTO)

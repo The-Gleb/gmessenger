@@ -3,9 +3,9 @@ package entity
 import "time"
 
 type Session struct {
-	UserLogin string
-	Token     string
-	Expiry    time.Time
+	UserID int64
+	Token  string
+	Expiry time.Time
 }
 
 func (s *Session) IsExpired() bool {

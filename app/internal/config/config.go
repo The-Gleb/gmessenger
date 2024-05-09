@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	RunAddress      string        `default:":8080" envvar:"GATEWAY_GATEWAY_ADDR"`
-	LogLevel        string        `default:"info" flag:"loglevel" envvar:"LOGLEVEL"`
+	RunAddress      string        `default:"localhost:8081" envvar:"GATEWAY_GATEWAY_ADDR"`
+	LogLevel        string        `default:"debug" flag:"loglevel" envvar:"LOGLEVEL"`
 	TokenTTL        time.Duration `default:"24h"`
 	GroupServerHost string        `default:"localhost" envvar:"GROUP_SERVICE_HOST"`
 	GroupServerPort int           `default:"8081" envvar:"GROUP_SERVICE_PORT"`

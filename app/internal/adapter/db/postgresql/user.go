@@ -2,20 +2,22 @@ package postgresql
 
 import (
 	"context"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
+	"github.com/jackc/pgx/v5/pgtype"
 	"log/slog"
 
 	stdErrors "errors"
 
 	"github.com/The-Gleb/gmessenger/app/internal/adapter/db/sqlc"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
 	"github.com/The-Gleb/gmessenger/app/pkg/client/postgresql"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ service.UserStorage = new(userStorage)
 
 type Client interface {
 	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
@@ -36,10 +38,79 @@ func NewUserStorage(client postgresql.Client) *userStorage {
 	}
 }
 
-func (us *userStorage) GetByLogin(ctx context.Context, login string) (entity.User, error) {
+func (us userStorage) GetOrCreateByEmail(ctx context.Context, email string) (int64, bool, error) {
+	tx, err := us.client.Begin(ctx)
+	if err != nil {
+		slog.Error(err.Error())
+		return 0, false, errors.NewDomainError(errors.ErrDB, "[storage.GetOrCreateByEmail]")
+	}
+	defer func() {
+		err = tx.Rollback(ctx)
+		if err != nil {
+			slog.Error(err.Error())
+		}
+	}()
+
+	row := tx.QueryRow(
+		ctx,
+		`SELECT (id) FROM users WHERE email = $1`,
+		email,
+	)
+
+	var id int64
+	err = row.Scan(&id)
+	if err == nil {
+		return id, false, nil
+	}
+	if !stdErrors.Is(err, pgx.ErrNoRows) {
+		slog.Error(err.Error())
+		return 0, false, errors.NewDomainError(errors.ErrDB, "[storage.GetOrCreateByEmail]")
+	}
+
+	row = tx.QueryRow(
+		ctx,
+		`
+		INSERT INTO users (email)
+		VALUES ($1)
+		RETURNING id;
+		`,
+		email,
+	)
+
+	err = row.Scan(&id)
+	if err != nil {
+		slog.Error(err.Error())
+		return 0, false, errors.NewDomainError(errors.ErrDB, "[storage.GetOrCreateByEmail]")
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		slog.Error(err.Error())
+		return 0, false, errors.NewDomainError(errors.ErrDB, "[storage.GetOrCreateByEmail]")
+	}
+
+	return id, true, nil
+
+}
+
+func (us userStorage) SetUsername(ctx context.Context, dto entity.SetUsernameDTO) error {
+	_, err := us.client.Exec(
+		ctx,
+		`UPDATE users SET username = $1 WHERE id = $2`,
+		dto.Username, dto.UserID,
+	)
+	if err != nil {
+		slog.Error(err.Error())
+		return errors.NewDomainError(errors.ErrDB, "[storage.SetUsername]")
+	}
+	return nil
+}
+
+func (us userStorage) GetByLogin(ctx context.Context, login string) (entity.User, error) {
 	user, err := us.sqlc.GetUser(ctx, login)
 	switch err {
 	default:
+
 		return entity.User{}, errors.NewDomainError(errors.ErrDB, "[storage.GetByLogin]")
 
 	case pgx.ErrNoRows:
@@ -47,58 +118,122 @@ func (us *userStorage) GetByLogin(ctx context.Context, login string) (entity.Use
 
 	case nil:
 		return entity.User{
-			UserName: user.Username.String,
-			Login:    user.Login,
+			Username: user.Username.String,
+			Email:    user.Login,
 			Password: user.Password.String,
 		}, nil
 	}
 
 }
 
-func (us *userStorage) Create(ctx context.Context, user entity.User) (entity.User, error) {
+func (us userStorage) CreateWithPassword(ctx context.Context, dto entity.RegisterUserDTO) (int64, error) {
 
-	params := sqlc.CreateUserParams{
-		Username: pgtype.Text{
-			String: user.UserName,
-			Valid:  true,
-		},
-		Login: user.Login,
-		Password: pgtype.Text{
-			String: user.Password,
-			Valid:  true,
-		},
-	}
-	sqlcUser, err := us.sqlc.CreateUser(ctx, params)
+	tx, err := us.client.Begin(ctx)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if stdErrors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
-			return entity.User{}, errors.NewDomainError(errors.ErrDBLoginAlredyExists, "[storage.Create]:")
+		slog.Error(err.Error())
+		return 0, errors.NewDomainError(errors.ErrDB, "[storage.CreateWithPassword]")
+	}
+	defer func() {
+		err = tx.Rollback(ctx)
+		if err != nil {
+			slog.Error(err.Error())
 		}
+	}()
 
-		return entity.User{}, errors.NewDomainError(errors.ErrDB, "[storage.Create]")
+	row := tx.QueryRow(
+		ctx,
+		`INSERT INTO users (email, username)
+		VALUES ($1, $2)
+		RETURNING id;`,
+		dto.Email, dto.Username,
+	)
+	var id int64
+	err = row.Scan(&id)
+	if err != nil {
+		slog.Error(err.Error())
+		var pgErr *pgconn.PgError
+		if stdErrors.As(err, &pgErr) {
+			if pgErr.Code == pgerrcode.UniqueViolation {
+				return 0, errors.NewDomainError(errors.ErrUserExists, "[storage.CreateWithPassword]")
+			}
+		}
+		return 0, errors.NewDomainError(errors.ErrDB, "[storage.CreateWithPassword]")
 	}
 
-	return entity.User{
-		UserName: sqlcUser.Username.String,
-		Login:    sqlcUser.Login,
-		Password: sqlcUser.Password.String,
-	}, nil
-}
-
-func (us *userStorage) GetPassword(ctx context.Context, login string) (string, error) {
-	password, err := us.sqlc.GetPassword(ctx, login)
-	switch err {
-	case pgx.ErrNoRows:
-		return "", errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetPassworc]: user not found")
-	case nil:
-		return password.String, nil
-	default:
-		return "", errors.NewDomainError(errors.ErrDB, "[storage.GetByLogin]")
+	_, err = tx.Exec(
+		ctx,
+		`INSERT INTO user_password (user_id, password) VALUES ($1, $2);`,
+		id, dto.Password,
+	)
+	if err != nil {
+		slog.Error(err.Error())
+		return 0, errors.NewDomainError(errors.ErrDB, "[storage.CreateWithPassword]")
 	}
 
+	err = tx.Commit(ctx)
+	if err != nil {
+		slog.Error(err.Error())
+		return 0, errors.NewDomainError(errors.ErrDB, "[storage.CreateWithPassword]")
+	}
+
+	return id, nil
+
 }
 
-func (us *userStorage) GetAllUsernames(ctx context.Context) ([]string, error) {
+func (us userStorage) GetByEmail(ctx context.Context, email string) (entity.User, error) {
+
+	tx, err := us.client.Begin(ctx)
+	if err != nil {
+		return entity.User{}, errors.NewDomainError(errors.ErrDB, "[storage.GetPasswordByEmail]")
+	}
+	defer func() {
+		err = tx.Rollback(ctx)
+		if err != nil {
+			slog.Error(err.Error())
+		}
+	}()
+
+	row := tx.QueryRow(
+		ctx,
+		`SELECT id FROM users WHERE email = $1;`,
+		email,
+	)
+
+	user := entity.User{
+		Email: email,
+	}
+	err = row.Scan(&user.ID)
+	if err != nil {
+		if stdErrors.Is(err, pgx.ErrNoRows) {
+			return entity.User{}, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetPasswordByEmail]")
+		}
+		return entity.User{}, errors.NewDomainError(errors.ErrDB, "[storage.GetPasswordByEmail]")
+	}
+
+	row = tx.QueryRow(
+		ctx,
+		`SELECT password FROM user_password WHERE user_id = $1;`,
+		user.ID,
+	)
+
+	err = row.Scan(&user.Password)
+	if err != nil {
+		if stdErrors.Is(err, pgx.ErrNoRows) {
+			return entity.User{}, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetPasswordByEmail]")
+		}
+		return entity.User{}, errors.NewDomainError(errors.ErrDB, "[storage.GetPasswordByEmail]")
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return entity.User{}, errors.NewDomainError(errors.ErrDB, "[storage.GetPasswordByEmail]")
+	}
+
+	return user, nil
+
+}
+
+func (us userStorage) GetAllUsersView(ctx context.Context) ([]entity.UserView, error) {
 	sqlcNames, err := us.sqlc.GetAllUsernames(ctx)
 	switch err {
 	// case pgx.ErrNoRows:
@@ -114,75 +249,129 @@ func (us *userStorage) GetAllUsernames(ctx context.Context) ([]string, error) {
 	for i, sqlcName := range sqlcNames {
 		usernames[i] = sqlcName.String
 	}
-
-	return usernames, nil
+	// TODO:
+	return nil, nil
 }
 
-func (us *userStorage) GetChatsView(ctx context.Context, userLogin string) ([]entity.Chat, error) {
-	dbTx, err := us.client.Begin(ctx)
-	if err != nil {
-		return []entity.Chat{}, err
-	}
-	defer dbTx.Rollback(ctx) //nolint:all
+func (us userStorage) GetChatsView(ctx context.Context, userID int64) ([]entity.Chat, error) {
+	// TODO: refactor
 
-	sqlcTx := us.sqlc.WithTx(dbTx)
-
-	sqlcUsers, err := sqlcTx.GetAllUsers(ctx)
+	tx, err := us.client.Begin(ctx)
 	if err != nil {
 		slog.Error(err.Error())
-		return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
+		return nil, errors.NewDomainError(errors.ErrDB, "[storage.GetChatsView]")
 	}
-
-	chatsView := make([]entity.Chat, len(sqlcUsers))
-	for i, sqlcUser := range sqlcUsers {
-		chatsView[i].Type = client.Dialog
-		chatsView[i].ReceiverLogin = sqlcUser.Login
-		chatsView[i].Name = sqlcUser.Username.String
-		sqlcLastMsg, err := sqlcTx.GetLastMessage(ctx, sqlc.GetLastMessageParams{
-			Sender: sqlcUser.Username,
-			Receiver: pgtype.Text{
-				String: userLogin,
-				Valid:  true,
-			},
-			Limit:  1,
-			Offset: 0,
-		})
-		if err != nil {
-			if err == pgx.ErrNoRows {
-				chatsView[i].Unread = 0
-				continue
-			}
-			slog.Error(err.Error())
-			return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
-		}
-		chatsView[i].LastMessage = entity.Message{
-			ID:        sqlcLastMsg.ID,
-			Sender:    sqlcLastMsg.Sender.String,
-			Text:      sqlcLastMsg.Text.String,
-			Status:    sqlcLastMsg.Status.String,
-			Timestamp: sqlcLastMsg.CreatedAt.Time,
-		}
-
-		unreadNumber, err := sqlcTx.GetUnreadNumber(ctx, sqlc.GetUnreadNumberParams{
-			Sender: sqlcUser.Username,
-			Receiver: pgtype.Text{
-				String: userLogin,
-				Valid:  true,
-			},
-		})
+	defer func() {
+		err = tx.Rollback(ctx)
 		if err != nil {
 			slog.Error(err.Error())
-			return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
 		}
-		chatsView[i].Unread = unreadNumber
-	}
+	}()
 
-	err = dbTx.Commit(ctx)
+	rows, err := tx.Query(
+		ctx,
+		`
+			SELECT users.id, users.username, messages.id, messages.sender_id, messages.receiver_id
+			FROM users LEFT JOIN messages
+			ON
+			    (sender_id = users.id AND receiver_id = $1)
+				OR (receiver_id = users.id AND sender_id = $1);
+		`, userID,
+	)
+
+	chats, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (entity.Chat, error) {
+		var chat entity.Chat
+		var messageID pgtype.Int8
+		var receiverID pgtype.Int8
+		var senderID pgtype.Int8
+
+		err := row.Scan(&chat.ReceiverID, &chat.ReceiverName,
+			&messageID, &receiverID,
+			&senderID)
+
+		chat.LastMessage.ID = messageID.Int64
+		chat.LastMessage.ReceiverID = receiverID.Int64
+		chat.LastMessage.SenderID = senderID.Int64
+
+		return chat, err
+	})
 	if err != nil {
 		slog.Error(err.Error())
-		return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
+		return nil, errors.NewDomainError(errors.ErrDB, "[storage.GetChatsView]")
 	}
 
-	return chatsView, nil
+	err = tx.Commit(ctx)
+	if err != nil {
+		slog.Error(err.Error())
+		return nil, errors.NewDomainError(errors.ErrDB, "[storage.GetChatsView]")
+	}
+
+	return chats, nil
+
+	//dbTx, err := us.client.Begin(ctx)
+	//if err != nil {
+	//	return []entity.Chat{}, err
+	//}
+	//defer dbTx.Rollback(ctx) //nolint:all
+	//
+	//sqlcTx := us.sqlc.WithTx(dbTx)
+	//
+	//sqlcUsers, err := sqlcTx.GetAllUsers(ctx)
+	//if err != nil {
+	//	slog.Error(err.Error())
+	//	return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
+	//}
+	//
+	//chatsView := make([]entity.Chat, len(sqlcUsers))
+	//for i, sqlcUser := range sqlcUsers {
+	//	chatsView[i].Type = client.Dialog
+	//	chatsView[i].ReceiverLogin = sqlcUser.Login
+	//	chatsView[i].Name = sqlcUser.Username.String
+	//	sqlcLastMsg, err := sqlcTx.GetLastMessage(ctx, sqlc.GetLastMessageParams{
+	//		Sender: sqlcUser.Username,
+	//		Receiver: pgtype.Text{
+	//			String: userLogin,
+	//			Valid:  true,
+	//		},
+	//		Limit:  1,
+	//		Offset: 0,
+	//	})
+	//	if err != nil {
+	//		if err == pgx.ErrNoRows {
+	//			chatsView[i].Unread = 0
+	//			continue
+	//		}
+	//		slog.Error(err.Error())
+	//		return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
+	//	}
+	//	chatsView[i].LastMessage = entity.Message{
+	//		ID:        sqlcLastMsg.ID,
+	//		Sender:    sqlcLastMsg.Sender.String,
+	//		Text:      sqlcLastMsg.Text.String,
+	//		Status:    sqlcLastMsg.Status.String,
+	//		Timestamp: sqlcLastMsg.CreatedAt.Time,
+	//	}
+	//
+	//	unreadNumber, err := sqlcTx.GetUnreadNumber(ctx, sqlc.GetUnreadNumberParams{
+	//		Sender: sqlcUser.Username,
+	//		Receiver: pgtype.Text{
+	//			String: userLogin,
+	//			Valid:  true,
+	//		},
+	//	})
+	//	if err != nil {
+	//		slog.Error(err.Error())
+	//		return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
+	//	}
+	//	chatsView[i].Unread = unreadNumber
+	//}
+	//
+	//err = dbTx.Commit(ctx)
+	//if err != nil {
+	//	slog.Error(err.Error())
+	//	return []entity.Chat{}, errors.NewDomainError(errors.ErrDB, "")
+	//}
+
+	return nil, nil
 
 }

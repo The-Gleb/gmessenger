@@ -11,6 +11,7 @@ const (
 	ErrDBLoginAlredyExists ErrorCode = "login already exists"
 	ErrDB                  ErrorCode = "some error in storage layer"
 	ErrNoDataFound         ErrorCode = "no data found"
+	ErrUserExists          ErrorCode = "user with that email already exists"
 
 	ErrHDRUnmarshallingJSON ErrorCode = "error unmarshalling json"
 

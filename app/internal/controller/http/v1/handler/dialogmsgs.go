@@ -2,9 +2,12 @@ package v1
 
 import (
 	"context"
-	"encoding/json"
+	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
+	"strconv"
+	"time"
 
 	v1 "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
@@ -14,7 +17,7 @@ import (
 )
 
 const (
-	dialogMsgsURL = "/dialog/{receiverLogin}"
+	dialogMsgsURL = "/dialog/{receiverID}"
 )
 
 type DialogMsgsUsecase interface {
@@ -50,10 +53,44 @@ func (h *dialogMsgsHandler) Middlewares(md ...func(http.Handler) http.Handler) *
 	return h
 }
 
+var testMessages = []entity.Message{
+	{
+		ID:         1,
+		SenderID:   1,
+		SenderName: "Gleb",
+		ReceiverID: 2,
+		Text:       "Hello John!",
+		Timestamp:  time.Now(),
+	},
+	{
+		ID:         2,
+		SenderID:   1,
+		SenderName: "Gleb",
+		ReceiverID: 2,
+		Text:       "How are you!",
+		Timestamp:  time.Now(),
+	},
+	{
+		ID:         3,
+		SenderID:   2,
+		SenderName: "John",
+		ReceiverID: 1,
+		Text:       "Hello Gleb!",
+		Timestamp:  time.Now(),
+	}, {
+		ID:         4,
+		SenderID:   2,
+		SenderName: "John",
+		ReceiverID: 1,
+		Text:       "Im good!",
+		Timestamp:  time.Now(),
+	},
+}
+
 func (h *dialogMsgsHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	slog.Debug("dialogMsgsHandler working")
 
-	login, ok := r.Context().Value(v1.Key("userLogin")).(string)
+	userID, ok := r.Context().Value(v1.Key("userID")).(int64)
 	if !ok {
 		slog.Error("cannot get userLogin")
 		http.Error(rw, "cannot get userLogin", http.StatusInternalServerError)
@@ -65,38 +102,56 @@ func (h *dialogMsgsHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	// 	http.Error(rw, "[handler.OpenChat]: couldn't get session token from context", http.StatusInternalServerError)
 	// }
 
+	receiverID, err := strconv.ParseInt(chi.URLParam(r, "receiverID"), 10, 64)
+	if err != nil {
+		slog.Error("[dialogMsgsHandler.ServeHTTP]: couldn't get receiverID", "error", err)
+		http.Error(rw, "", http.StatusBadRequest)
+		return
+	}
+
 	usecaseDTO := dialogmsgs_usecase.GetDialogMessagesDTO{
-		SenderLogin:   login,
-		ReceiverLogin: chi.URLParam(r, "receiverLogin"),
+		SenderID:   userID,
+		ReceiverID: receiverID,
 	}
 
 	slog.Debug("dialogMsgs usecase dto ", "struct", usecaseDTO)
 
-	messages, err := h.usecase.GetDialogMessages(r.Context(), usecaseDTO)
+	_, err = h.usecase.GetDialogMessages(r.Context(), usecaseDTO)
 	if err != nil {
 		slog.Error(err.Error())
 
 		switch errors.Code(err) {
 		case errors.ErrReceiverNotFound:
 			http.Error(rw, err.Error(), http.StatusNotFound)
-
+			return
 		default:
 			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
-	b, err := json.Marshal(messages)
-	if err != nil {
-		slog.Error(err.Error())
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	workDir, _ := os.Getwd()
 
-	_, err = rw.Write(b)
-	if err != nil {
-		http.Error(rw, " error writing to body", http.StatusInternalServerError)
-		return
-	}
+	templ := template.Must(template.ParseFiles(workDir + "/app/cmd/templates/dialog/dialog.html"))
+
+	data := struct {
+		Messages []entity.Message
+		UserID   int64
+	}{testMessages, userID}
+
+	err = templ.Execute(rw, data)
+
+	//b, err := json.Marshal(messages)
+	//if err != nil {
+	//	slog.Error(err.Error())
+	//	http.Error(rw, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//_, err = rw.Write(b)
+	//if err != nil {
+	//	http.Error(rw, " error writing to body", http.StatusInternalServerError)
+	//	return
+	//}
 
 }

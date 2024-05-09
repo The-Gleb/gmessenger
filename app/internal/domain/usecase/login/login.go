@@ -11,31 +11,26 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type SessionService interface {
+type sessionService interface {
 	Create(ctx context.Context, session entity.Session) error
-	GetLoginByToken(ctx context.Context, token string) (entity.Session, error)
-	Delete(ctx context.Context, token string) error
 }
 
-type UserService interface {
-	Create(ctx context.Context, user entity.User) (entity.User, error)
-	GetByLogin(ctx context.Context, login string) (entity.User, error)
-	GetPassword(ctx context.Context, login string) (string, error)
-	GetAllUsernames(ctx context.Context) ([]string, error)
+type userService interface {
+	GetByEmail(ctx context.Context, email string) (entity.User, error)
 }
 
 type loginUsecase struct {
-	userService    UserService
-	sessionService SessionService
+	userService    userService
+	sessionService sessionService
 }
 
-func NewLoginUsecase(us UserService, ss SessionService) *loginUsecase {
+func NewLoginUsecase(us userService, ss sessionService) *loginUsecase {
 	return &loginUsecase{us, ss}
 }
 
-func (uc *loginUsecase) Login(ctx context.Context, loginDTO LoginDTO) (entity.Session, error) {
+func (uc *loginUsecase) Login(ctx context.Context, dto entity.LoginDTO) (entity.Session, error) {
 
-	password, err := uc.userService.GetPassword(ctx, loginDTO.Login)
+	user, err := uc.userService.GetByEmail(ctx, dto.Email)
 	if err != nil {
 		if errors.Code(err) == errors.ErrNoDataFound {
 			return entity.Session{}, errors.NewDomainError(errors.ErrUCWrongLoginOrPassword, "[usecase.Login]:")
@@ -43,15 +38,16 @@ func (uc *loginUsecase) Login(ctx context.Context, loginDTO LoginDTO) (entity.Se
 		return entity.Session{}, fmt.Errorf("[usecase.Login]: %w", err)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(password), []byte(loginDTO.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(dto.Password))
 	if err != nil {
 		return entity.Session{}, errors.NewDomainError(errors.ErrUCWrongLoginOrPassword, "[usecase.Login]:")
 	}
 
+	// TODO: make JWT
 	newSession := entity.Session{
-		UserLogin: loginDTO.Login,
-		Token:     uuid.NewString(),
-		Expiry:    time.Now().Add(24 * time.Hour), // TODO config
+		UserID: user.ID,
+		Token:  uuid.NewString(),
+		Expiry: time.Now().Add(24 * time.Hour), // TODO config
 	}
 
 	err = uc.sessionService.Create(ctx, newSession)
