@@ -45,10 +45,10 @@
   font-weight: 600;
 }
 
-@mixin text-small-12s() {
-  font-size: 0.75rem;
+@mixin text-small-13s() {
+  font-size: 0.875rem;
   line-height: 1rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.05em;
 }
 
 @mixin text-ultra-small-10() {

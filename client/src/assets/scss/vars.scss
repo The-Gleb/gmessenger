@@ -7,12 +7,18 @@
   --vt-c-black-soft: #222222;
   --vt-c-black-mute: #282828;
 
+  --vt-c-grey-dark: #4d4d4d;
+  --vt-c-grey: #999;
+  --vt-c-grey-light: #e6e6e6;
+
   --vt-c-indigo: #2c3e50;
   --vt-c-red: #dc4638;
 
-  --vt-c-green: hsla(160, 100%, 37%);
-  --vt-c-dark-green: hsla(160, 100%, 37%, 0.2);
+  --vt-c-light-green: hsla(160, 100%, 37%);
+  --vt-c-green: hsla(160, 100%, 37%, 0.426);
+  --vt-c-dark-green: hsla(160, 100%, 37%, 0.256);
 
-  --shadow: 0px 4px 50px 0px var(--vt-c-dark-green);
+  --shadow-black: 0px 4px 18px 0px var(--vt-c-black);
+  --shadow-green: 0px 4px 20px 0px var(--vt-c-dark-green);
   --transition: 0.3s ease;
 }

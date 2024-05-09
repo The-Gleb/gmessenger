@@ -60,12 +60,13 @@ const componentButton = computed(() => {
   @include text-14s;
 
   &_default {
-    background-color: var(--vt-c-green);
+    background-color: var(--vt-c-light-green);
     color: var(--vt-c-white);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-green);
 
     &:hover {
       background-color: var(--vt-c-green);
+      box-shadow: var(--shadow-black);
     }
 
     &:disabled {

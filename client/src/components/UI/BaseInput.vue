@@ -132,7 +132,7 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
 
 <style lang="scss" scoped>
 .ui-input {
-  @include text-small-12s;
+  @include text-small-13s;
 
   &__title {
     color: var(--vt-c-white-mute);
@@ -152,7 +152,7 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
     padding: 0 8px;
     border: 1px solid var(--vt-c-white-mute);
     border-radius: 6px;
-    background-color: var(--vt-c-dark-green);
+    background-color: var(--vt-c-black-mute);
     display: flex;
     align-items: center;
     cursor: text;
@@ -167,6 +167,7 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
       width: 100%;
       outline: none;
       color: var(--vt-c-white);
+      line-height: 1;
 
       &::placeholder {
         color: var(--vt-c-white-mute);
