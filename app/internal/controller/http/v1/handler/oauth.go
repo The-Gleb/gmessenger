@@ -93,6 +93,7 @@ func (h *oauthHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	if gothUser, err := gothic.CompleteUserAuth(rw, r); err == nil {
 		slog.Info("complete auth", "user", gothUser)
+
 		//t, _ := template.New("foo").Parse(userTemplate)
 		//t.Execute(rw, gothUser)
 	} else {

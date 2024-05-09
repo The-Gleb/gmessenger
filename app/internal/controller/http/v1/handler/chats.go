@@ -2,10 +2,9 @@ package v1
 
 import (
 	"context"
-	"html/template"
+	"encoding/json"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
 	v1 "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
@@ -96,22 +95,16 @@ func (h *chatsHandler) ShowChats(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	workDir, _ := os.Getwd()
+	_, err = json.Marshal(testChats)
+	if err != nil {
+		http.Error(rw, "error parsing to json", http.StatusInternalServerError)
+		return
+	}
 
-	templ := template.Must(template.ParseFiles(workDir + "/app/cmd/templates/chats/chats.html"))
-
-	err = templ.Execute(rw, testChats)
-
-	//_, err = json.Marshal(chats)
-	//if err != nil {
-	//	http.Error(rw, "error parsing to json", http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//_, err = rw.Write([]byte("here are the chats"))
-	//if err != nil {
-	//	http.Error(rw, "error writing to body", http.StatusInternalServerError)
-	//	return
-	//}
+	_, err = rw.Write([]byte("here are the chats"))
+	if err != nil {
+		http.Error(rw, "error writing to body", http.StatusInternalServerError)
+		return
+	}
 
 }

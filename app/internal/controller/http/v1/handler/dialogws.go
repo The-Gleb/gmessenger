@@ -78,6 +78,7 @@ func (h *dialogWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("[dialogWSHandler.ServeHTTP]: couldn't get receiverID", "error", err)
 		http.Error(rw, "", http.StatusBadRequest)
+		return
 	}
 
 	usecaseDTO := dialogws_usecase.OpenDialogDTO{
