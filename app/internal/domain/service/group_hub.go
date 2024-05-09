@@ -17,7 +17,7 @@ type ClientSessions map[string]*client.Client
 
 type Room struct {
 	ID      int64
-	Clients map[string]ClientSessions
+	Clients map[int64]ClientSessions
 }
 
 type groupHub struct {
@@ -36,8 +36,8 @@ func NewGroupHub(gc group.GroupClient) *groupHub {
 func (gh *groupHub) AddClient(c *client.Client) {
 
 	resp, err := gh.GroupClient.CheckMember(context.TODO(), &group.CheckMemberRequest{
-		UserLogin: c.SenderLogin,
-		GroupId:   c.GroupID,
+		//UserID: c.SenderID, // TODO: regenerate proto files
+		GroupId: c.GroupID,
 	})
 	if err != nil {
 		client.CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
@@ -47,7 +47,7 @@ func (gh *groupHub) AddClient(c *client.Client) {
 
 	if !resp.GetIsMember() {
 		client.CloseWSConnection(c.Conn, websocket.ClosePolicyViolation)
-		slog.Error("client is not a member of this chat", "userLogin", c.SenderLogin, "group ID", c.GroupID)
+		slog.Error("client is not a member of this chat", "userLogin", c.SenderID, "group ID", c.GroupID)
 		return
 	}
 
@@ -59,17 +59,17 @@ func (gh *groupHub) AddClient(c *client.Client) {
 	if !ok {
 		room = &Room{
 			ID:      c.GroupID,
-			Clients: make(map[string]ClientSessions),
+			Clients: make(map[int64]ClientSessions),
 		}
 		gh.Rooms[c.GroupID] = room
 		slog.Debug("room created", "id", c.GroupID)
 	}
 
-	clientSessions, ok := room.Clients[c.SenderLogin]
+	clientSessions, ok := room.Clients[c.SenderID]
 
 	if !ok {
 		clientSessions = make(ClientSessions)
-		room.Clients[c.SenderLogin] = clientSessions
+		room.Clients[c.SenderID] = clientSessions
 	}
 
 	clientSessions[c.SessionToken] = c
@@ -85,12 +85,12 @@ func (gh *groupHub) RemoveClient(c *client.Client) {
 	gh.mu.Lock()
 	defer gh.mu.Unlock()
 
-	delete(gh.Rooms[c.GroupID].Clients[c.SenderLogin], c.SessionToken)
+	delete(gh.Rooms[c.GroupID].Clients[c.SenderID], c.SessionToken)
 
 	// client.CloseWSConnection(c.Conn, websocket.CloseNormalClosure)
 
-	if len(gh.Rooms[c.GroupID].Clients[c.SenderLogin]) == 0 {
-		delete(gh.Rooms[c.GroupID].Clients, c.SenderLogin)
+	if len(gh.Rooms[c.GroupID].Clients[c.SenderID]) == 0 {
+		delete(gh.Rooms[c.GroupID].Clients, c.SenderID)
 	}
 
 	if len(gh.Rooms[c.GroupID].Clients) == 0 {
@@ -124,9 +124,9 @@ func (gh *groupHub) SendNewMessage(event entity.Event, senderClient *client.Clie
 	}
 
 	addMessageResponse, err := gh.GroupClient.AddMessage(context.TODO(), &group.AddMessageRequest{
-		SenderLogin: senderClient.SenderLogin,
-		GroupId:     senderClient.GroupID,
-		Text:        chatevent.Text,
+		//SenderID: senderClient.SenderID, // TODO: regenerate proto
+		GroupId: senderClient.GroupID,
+		Text:    chatevent.Text,
 	})
 	if err != nil {
 		client.CloseWSConnection(senderClient.Conn, websocket.CloseInternalServerErr)
@@ -137,10 +137,10 @@ func (gh *groupHub) SendNewMessage(event entity.Event, senderClient *client.Clie
 	newMessage := addMessageResponse.GetMessage()
 
 	newMessageEvent := entity.NewMessageEvent{
-		ID:          newMessage.GetId(),
-		SenderLogin: newMessage.GetSenderLogin(),
-		Status:      newMessage.GetStatus().String(),
-		Text:        newMessage.GetText(),
+		ID: newMessage.GetId(),
+		//SenderID: newMessage.GetSenderID(), // TODO: regenerate proto
+		Status: newMessage.GetStatus().String(),
+		Text:   newMessage.GetText(),
 	}
 
 	data, err := json.Marshal(newMessageEvent)

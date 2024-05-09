@@ -1,7 +1,7 @@
 package dto
 
 type RegisterUserDTO struct {
-	UserName string `json:"username"`
-	Login    string `json:"login"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }

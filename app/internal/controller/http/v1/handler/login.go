@@ -3,9 +3,7 @@ package v1
 import (
 	"context"
 	"encoding/json"
-	"github.com/The-Gleb/gmessenger/app/internal/controller/http/dto"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	login_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/login"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
 	"github.com/go-chi/chi/v5"
 	"log/slog"
@@ -17,7 +15,7 @@ const (
 )
 
 type LoginUsecase interface {
-	Login(ctx context.Context, usecaseDTO login_usecase.LoginDTO) (entity.Session, error)
+	Login(ctx context.Context, dto entity.LoginDTO) (entity.Session, error)
 }
 
 type loginHandler struct {
@@ -44,26 +42,23 @@ func (h *loginHandler) Middlewares(md ...func(http.Handler) http.Handler) *login
 
 func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 
-	var d dto.LoginDTO
+	var dto entity.LoginDTO
 	defer r.Body.Close()
 
-	err := json.NewDecoder(r.Body).Decode(&d)
+	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		slog.Error("[loginHandler.Login]: error parsing json to dto", "error", err)
 		http.Error(rw, "[loginHandler.Login]: error parsing json to dto", http.StatusBadRequest)
 		return
 	}
-	if d.Login == "" || d.Password == "" {
+	if dto.Email == "" || dto.Password == "" {
 		http.Error(rw, "[loginHandler.Login]:", http.StatusBadRequest)
 		return
 	}
 
-	slog.Debug("LoginDTO", "struct", d)
+	slog.Debug("LoginDTO", "struct", dto)
 
-	s, err := h.usecase.Login(r.Context(), login_usecase.LoginDTO{
-		Login:    d.Login,
-		Password: d.Password,
-	})
+	s, err := h.usecase.Login(r.Context(), dto)
 	if err != nil {
 		slog.Error(err.Error())
 
@@ -84,19 +79,19 @@ func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(rw, &c)
 
-	slog.Debug("set cookie ", "value", c.Value)
+	rw.WriteHeader(http.StatusOK)
 
-	b, err := json.Marshal(c)
-	if err != nil {
-		slog.Error(err.Error())
-		http.Error(rw, "[loginHandler.Login]: error parsing to json", http.StatusInternalServerError)
-		return
-	}
+	// b, err := json.Marshal(c)
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// 	http.Error(rw, "[loginHandler.Login]: error parsing to json", http.StatusInternalServerError)
+	// 	return
+	// }
 
-	_, err = rw.Write(b)
-	if err != nil {
-		http.Error(rw, " error writing to body", http.StatusInternalServerError)
-		return
-	}
+	// _, err = rw.Write(b)
+	// if err != nil {
+	// 	http.Error(rw, " error writing to body", http.StatusInternalServerError)
+	// 	return
+	// }
 
 }

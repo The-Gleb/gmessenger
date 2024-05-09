@@ -23,14 +23,14 @@ func NewSessionService(s SessionStorage) *SessionService {
 	return &SessionService{repo: s}
 }
 
-func (ss *SessionService) GetLoginByToken(ctx context.Context, token string) (entity.Session, error) {
+func (ss *SessionService) GetByToken(ctx context.Context, token string) (entity.Session, error) {
 
 	session, err := ss.repo.GetByToken(ctx, token)
 	if err != nil {
 		return entity.Session{}, err
 	}
 	if session.IsExpired() {
-		return session, errors.NewDomainError(errors.ErrSessionExpired, "[service.GetLoginByToken]:")
+		return session, errors.NewDomainError(errors.ErrSessionExpired, "[service.GetByToken]:")
 	}
 	return session, nil
 }

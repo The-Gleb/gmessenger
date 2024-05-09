@@ -3,11 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
+	oauth_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/oauth"
+	username_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/username"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -15,6 +19,7 @@ import (
 	"github.com/The-Gleb/gmessenger/app/internal/config"
 	handlers "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/handler"
 	middlewares "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
+	db "github.com/The-Gleb/gmessenger/app/pkg/client/postgresql"
 	"github.com/The-Gleb/gmessenger/app/pkg/proto/go/group"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -29,7 +34,8 @@ import (
 	login_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/login"
 	register_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/register"
 	"github.com/The-Gleb/gmessenger/app/internal/logger"
-	db "github.com/The-Gleb/gmessenger/app/pkg/client/postgresql"
+
+	// db "github.com/The-Gleb/gmessenger/app/pkg/client/postgresql"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -71,6 +77,8 @@ func main() {
 	dialogMsgsUsecase := dialogmsgs_usecase.NewDialogMsgsUsecase(messageService)
 	groupWSUsecase := groupws_usecase.NewGroupWSUsecase(groupHub)
 	groupMsgsUsecase := groupmsgs_usecase.NewGroupMsgsUsecase(groupClient)
+	setUsernameUsecase := username_usecase.NewUsernameUsecase(userService)
+	oauthUsecase := oauth_usecase.NewOAuthUsecase(userService, sessionService)
 
 	authMiddleWare := middlewares.NewAuthMiddleware(authUsecase)
 	loginHandler := handlers.NewLoginHandler(loginUsecase)
@@ -80,24 +88,17 @@ func main() {
 	dialogMsgsHandler := handlers.NewDialogMsgsHandler(dialogMsgsUsecase)
 	groupWSHandler := handlers.NewGroupWSHandler(groupWSUsecase)
 	groupMsgsHandler := handlers.NewGroupMsgsHandler(groupMsgsUsecase)
+	setUsernameHandler := handlers.NewSetUsernameHandler(setUsernameUsecase)
+	oauthHandler := handlers.NewOAuthHandler(oauthUsecase)
 
 	r := chi.NewRouter()
 
+	workDir, _ := os.Getwd()
+	filesDir := http.Dir(filepath.Join(workDir, "app/cmd/templates"))
+	FileServer(r, "/static/", filesDir)
+
 	th := &templateHandler{fileName: "index.html"}
 	r.Get("/", th.ServeHTTP)
-	// h := func(w http.ResponseWriter, r *http.Request) {
-	// 	templ := template.Must(template.ParseFiles("./cmd/index.html"))
-
-	// 	err = templ.Execute(w, nil)
-	// 	if err != nil {
-	// 		slog.Error(err.Error())
-	// 	}
-	// }
-	// http.Handle("/", http.HandlerFunc(h))
-	// err = http.ListenAndServe(":8081", nil)
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// }
 
 	loginHandler.AddToRouter(r)
 	registerHandler.AddToRouter(r)
@@ -106,6 +107,8 @@ func main() {
 	dialogWSHandler.Middlewares(authMiddleWare.Websocket).AddToRouter(r)
 	groupMsgsHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
 	groupWSHandler.Middlewares(authMiddleWare.Websocket).AddToRouter(r)
+	setUsernameHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
+	oauthHandler.AddToRouter(r)
 
 	s := http.Server{
 		Addr:    cfg.RunAddress,
@@ -141,13 +144,46 @@ type templateHandler struct {
 }
 
 func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("requst pointer", "pointer", r)
+
+	slog.Debug("root handler working")
+	// filesDir := http.Dir(filepath.Join(workDir, "app/cmd/templates"))
+
+	c, err := r.Cookie("sessionToken")
+	if err == nil && c.Value != "" {
+		slog.Debug("sessionToken found", "token", c)
+		http.Redirect(w, r, "/chats", http.StatusMovedPermanently)
+		return
+	}
+
+	slog.Debug("sessionToken not found, redirecting to login")
+
+	http.Redirect(w, r, "/static/login/login.html", http.StatusFound)
+	workDir, _ := os.Getwd()
 	t.once.Do(func() {
-		t.templ = template.Must(template.ParseFiles("./app/cmd/index.html"))
+		t.templ = template.Must(template.ParseFiles(workDir + "/app/cmd/templates/login/login.html"))
 	})
 
-	err := t.templ.Execute(w, nil)
+	err = t.templ.Execute(w, nil)
 	if err != nil {
 		slog.Error(err.Error())
 	}
+}
+
+func FileServer(r chi.Router, path string, root http.FileSystem) {
+	if strings.ContainsAny(path, "{}*") {
+		panic("FileServer does not permit any URL parameters.")
+	}
+
+	if path != "/" && path[len(path)-1] != '/' {
+		r.Get(path, http.RedirectHandler(path+"/", http.StatusMovedPermanently).ServeHTTP)
+		path += "/"
+	}
+	path += "*"
+
+	r.Get(path, func(w http.ResponseWriter, r *http.Request) {
+		rctx := chi.RouteContext(r.Context())
+		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
+		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
+		fs.ServeHTTP(w, r)
+	})
 }

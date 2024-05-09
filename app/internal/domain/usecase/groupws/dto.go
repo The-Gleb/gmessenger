@@ -4,7 +4,7 @@ import "github.com/gorilla/websocket"
 
 type OpenGroupDTO struct {
 	Websocket   *websocket.Conn
-	SenderLogin string
+	SenderID    int64
 	SenderToken string
 	GroupID     int64
 }

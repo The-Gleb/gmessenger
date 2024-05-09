@@ -1,10 +1,9 @@
 package entity
 
 type Chat struct {
-	Type          string
-	GroupID       int64
-	ReceiverLogin string
-	Name          string
-	LastMessage   Message
-	Unread        int64
+	Type         string
+	ReceiverID   string
+	ReceiverName string
+	LastMessage  Message
+	Unread       int64
 }

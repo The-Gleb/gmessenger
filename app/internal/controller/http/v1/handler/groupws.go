@@ -53,12 +53,12 @@ func (h *groupWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(rw, r, nil)
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(rw, "cannot get userLogin", http.StatusInternalServerError)
+		http.Error(rw, "cannot get userID", http.StatusInternalServerError)
 		return
 	}
-	login, ok := r.Context().Value(v1.Key("userLogin")).(string)
+	userID, ok := r.Context().Value(v1.Key("userID")).(int64)
 	if !ok {
-		slog.Error("cannot get userLogin")
+		slog.Error("cannot get userID")
 		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
@@ -78,7 +78,7 @@ func (h *groupWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	usecaseDTO := groupws_usecase.OpenGroupDTO{
 		Websocket:   conn,
-		SenderLogin: login,
+		SenderID:    userID,
 		GroupID:     groupID,
 		SenderToken: token,
 	}

@@ -36,12 +36,12 @@ func (u *dialogWSUsecase) OpenDialog(ctx context.Context, dto OpenDialogDTO) err
 	// TODO: check if receiver exists
 
 	newClient := &client.Client{
-		Type:          client.Dialog, // probably useless
-		Conn:          dto.Websocket,
-		Message:       make(chan entity.Event, 5),
-		SenderLogin:   dto.SenderLogin,
-		ReceiverLogin: dto.ReceiverLogin,
-		SessionToken:  dto.SenderToken,
+		Type:         client.Dialog, // probably useless
+		Conn:         dto.Websocket,
+		Message:      make(chan entity.Event, 5),
+		SenderID:     dto.SenderID,
+		ReceiverID:   dto.ReceiverID,
+		SessionToken: dto.SenderToken,
 	}
 
 	u.dialogHub.AddClient(newClient)

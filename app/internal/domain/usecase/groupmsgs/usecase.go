@@ -51,8 +51,8 @@ func (u *groupMsgsUsecase) GetGroupMessages(ctx context.Context, dto GetGroupMes
 
 	for i, grpcMessage := range grpcMessages {
 		messages[i] = entity.Message{
-			ID:        grpcMessage.GetId(),
-			Sender:    grpcMessage.GetSenderLogin(),
+			ID: grpcMessage.GetId(),
+			//SenderID:    grpcMessage.GetSenderID(), // TODO: regenerate proto
 			Text:      grpcMessage.GetText(),
 			Status:    grpcMessage.GetStatus().String(),
 			Timestamp: grpcMessage.Timestamp.AsTime(),

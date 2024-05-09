@@ -1,26 +1,33 @@
-CREATE TABLE "messages" (
+CREATE TABLE "users" (
   "id" bigserial PRIMARY KEY,
-  "sender" varchar,
-  "receiver" varchar,
-  "text" text,
-  "status" varchar,
-  "created_at" timestamp
+  "email" varchar UNIQUE,
+  "username" varchar
 );
 
-CREATE TABLE "users" (
-  "login" varchar PRIMARY KEY,
-  "username" varchar,
-  "password" varchar
+CREATE TABLE "messages" (
+    "id" bigserial PRIMARY KEY,
+    "sender_id" bigserial REFERENCES users ("id"),
+    "receiver_id" bigserial REFERENCES users ("id"),
+    "text" text,
+    "status" varchar,
+    "created_at" timestamp
+);
+
+CREATE TABLE  "user_password" (
+    "user_id" bigserial REFERENCES users ("id"),
+    "password" varchar
+);
+
+CREATE TABLE "oauth2_info" (
+  "user_id" bigserial REFERENCES users ("id"),
+  "provider" varchar,
+  "provider_id" bigserial,
+  UNIQUE ("user_id", "provider")
 );
 
 CREATE TABLE "sessions" (
-  "token" varchar PRIMARY KEY,
-  "user_login" varchar,
+  "session_id" bigserial PRIMARY KEY,
+  "session_token" varchar UNIQUE,
+  "user_id" bigserial REFERENCES users ("id"),
   "expiry" timestamp
 );
-
-ALTER TABLE "messages" ADD FOREIGN KEY ("sender") REFERENCES "users" ("login");
-
-ALTER TABLE "messages" ADD FOREIGN KEY ("receiver") REFERENCES "users" ("login");
-
-ALTER TABLE "sessions" ADD FOREIGN KEY ("user_login") REFERENCES "users" ("login");

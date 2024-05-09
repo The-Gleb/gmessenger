@@ -11,7 +11,7 @@ import (
 type Key string
 
 type AuthUsecase interface {
-	Auth(ctx context.Context, token string) (string, error)
+	Auth(ctx context.Context, token string) (int64, error)
 }
 
 type authMiddleWare struct {
@@ -25,24 +25,26 @@ func NewAuthMiddleware(usecase AuthUsecase) *authMiddleWare {
 func (m *authMiddleWare) Http(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Debug("auth middleware working")
-		c, err := r.Cookie("sessionToken")
 
+		c, err := r.Cookie("sessionToken")
 		if err != nil {
-			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
+			slog.Error("sessionToken cookie not found")
+			http.Redirect(w, r, "/static/login/login.html", http.StatusMovedPermanently)
+			//http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
 			return
 		}
 		slog.Debug("Cookie is", "cookie", c.Value)
 
-		userLogin, err := m.usecase.Auth(r.Context(), c.Value)
+		userID, err := m.usecase.Auth(r.Context(), c.Value)
 		if err != nil {
-			slog.Debug("got userlogig from auth usecase", "login", userLogin)
 			slog.Error(err.Error())
-			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
+			http.Redirect(w, r, "/static/login/login.html", http.StatusMovedPermanently)
+			//http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
 			return
 		}
+		slog.Debug("got userID from auth usecase", "ID", userID)
 
-		ctx := context.WithValue(r.Context(), Key("userLogin"), userLogin)
-		ctx = context.WithValue(ctx, Key("token"), c.Value)
+		ctx := context.WithValue(r.Context(), Key("userID"), userID)
 
 		r = r.WithContext(ctx)
 
