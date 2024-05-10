@@ -8,7 +8,7 @@ import (
 type corsMiddleWare struct {
 }
 
-func NewCorsMiddleware(usecase AuthUsecase, otpService otpService) *corsMiddleWare {
+func NewCorsMiddleware() *corsMiddleWare {
 	return &corsMiddleWare{}
 }
 

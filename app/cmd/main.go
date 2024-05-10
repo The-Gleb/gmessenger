@@ -84,6 +84,8 @@ func main() {
 	oauthUsecase := oauth_usecase.NewOAuthUsecase(userService, pasetoAuthService, sessionService)
 
 	authMiddleWare := middlewares.NewAuthMiddleware(authUsecase, otpService)
+	corsMiddleware := middlewares.NewCorsMiddleware()
+
 	loginHandler := handlers.NewLoginHandler(loginUsecase)
 	registerHandler := handlers.NewRegisterHandler(registerUsecase)
 	chatsHandler := handlers.NewChatsHandler(chatsUsecase)
@@ -106,13 +108,13 @@ func main() {
 
 	loginHandler.AddToRouter(r)
 	registerHandler.AddToRouter(r)
-	chatsHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
-	dialogMsgsHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
-	dialogWSHandler.Middlewares(authMiddleWare.Websocket).AddToRouter(r)
-	groupMsgsHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
-	groupWSHandler.Middlewares(authMiddleWare.Websocket).AddToRouter(r)
-	setUsernameHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
-	userInfoHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
+	chatsHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
+	dialogMsgsHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
+	dialogWSHandler.Middlewares(authMiddleWare.Websocket, corsMiddleware.AllowCors).AddToRouter(r)
+	groupMsgsHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
+	groupWSHandler.Middlewares(authMiddleWare.Websocket, corsMiddleware.AllowCors).AddToRouter(r)
+	setUsernameHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
+	userInfoHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
 	oauthHandler.AddToRouter(r)
 
 	s := http.Server{
