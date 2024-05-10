@@ -1,7 +1,7 @@
 package entity
 
-const GROUP_CHAT = "GROUP_CHAT"
-const PERSONAL_CHAT = "PERSONAL_CHAT"
+const GROUP = "GROUP"
+const DIALOG = "DIALOG"
 
 type Chat struct {
 	Type         string  `json:"type"`
