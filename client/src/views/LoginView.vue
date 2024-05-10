@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import BaseInput from '@/components/UI/BaseInput.vue'
 import BaseButton from '@/components/UI/BaseButton.vue'
+import BaseInputPassword from '@/components/UI/BaseInputPassword.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import { type LoginForm } from '@/types'
 
@@ -19,7 +20,12 @@ const form = ref<LoginForm>({
 
       <div class="login-form__inputs">
         <BaseInput v-model="form.login" label="Email address" placeholder="Enter email address" />
-        <BaseInput v-model="form.password" label="Password" placeholder="Enter password" />
+        <BaseInputPassword
+          v-model="form.password"
+          label="Password"
+          placeholder="Enter password"
+          type="password"
+        />
         <BaseButton class="login-form__button">Login</BaseButton>
       </div>
 

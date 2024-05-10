@@ -1,34 +1,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, useSlots } from 'vue'
-import { type ErrorObject } from '@vuelidate/core'
 import BaseIcon from '@/components/UI/BaseIcon.vue'
-
-type InputProps = {
-  modelValue: string
-  prependIcon?: string
-  prependIconColor?: string
-  prependIconClickable?: boolean
-  appendIcon?: string
-  appendIconColor?: string
-  appendIconClickable?: boolean
-  label?: string
-  hint?: string
-  autofocus?: boolean
-  type?: string
-  disabled?: boolean
-  placeholder?: string
-  autocomplete?: string
-  errorMessages?: ErrorObject[]
-  required?: boolean
-}
-
-type InputEmits = {
-  (e: 'update:modelValue', value: string): void
-  (e: 'click:prepend-icon', event: MouseEvent): void
-  (e: 'click:append-icon', event: MouseEvent): void
-  (e: 'focus', event: FocusEvent): void
-  (e: 'blur', event: FocusEvent): void
-}
+import { type InputProps, type InputEmits } from './BaseInput'
 
 const props = withDefaults(defineProps<InputProps>(), {
   prependIcon: undefined,
@@ -46,17 +19,9 @@ const props = withDefaults(defineProps<InputProps>(), {
 })
 const emit = defineEmits<InputEmits>()
 
+const updatedValue = defineModel<string>({ required: true })
+
 const inputRef = ref<HTMLInputElement | null>(null)
-
-const updatedValue = computed({
-  get() {
-    return props.modelValue
-  },
-  set(value: string) {
-    emit('update:modelValue', value)
-  }
-})
-
 const inputLabel = ref<HTMLLabelElement | null>(null)
 
 onMounted(() => {
