@@ -83,7 +83,7 @@ const login = async () => {
           <BaseInputPassword
             v-model="form.repeatPassword"
             label="Repeat password"
-            placeholder="Repeat password"
+            placeholder="Enter password again"
             type="password"
             class="registration-form__input"
             :error-messages="v.repeatPassword.$errors"
