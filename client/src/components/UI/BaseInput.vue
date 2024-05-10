@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, useSlots } from 'vue'
 import BaseIcon from '@/components/UI/BaseIcon.vue'
 import { type InputProps, type InputEmits } from './BaseInput'
+import BaseValidationMessage from './BaseValidationMessage.vue'
 
 const props = withDefaults(defineProps<InputProps>(), {
   prependIcon: undefined,
@@ -92,6 +93,7 @@ const appendIconTag = computed(() => getIconTag(props.appendIconClickable))
         </slot>
       </div>
     </label>
+    <BaseValidationMessage :error-messages="errorMessages" />
   </div>
 </template>
 
