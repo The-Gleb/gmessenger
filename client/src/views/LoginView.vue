@@ -17,6 +17,7 @@ import {
 } from '@/utils/validators'
 import useVuelidate from '@vuelidate/core'
 import { auth } from '@/services/api/auth'
+import { useAuthStore } from '@/stores/auth'
 
 const form = ref<LoginForm>({
   email: '',
@@ -44,9 +45,10 @@ const login = async () => {
   if (!isValid) {
     return
   }
+  const { setAccessToken } = useAuthStore()
 
-  const test = await auth.login(form.value)
-  console.log(test)
+  const { data } = await auth.login(form.value)
+  setAccessToken(data)
 }
 </script>
 

@@ -1,4 +1,5 @@
 import { httpClient } from '@/plugins/httpClient'
+import type { AccessToken } from '@/types'
 import { BASE_URL } from '@/utils/constants'
 
 export interface LoginPayload {
@@ -14,9 +15,9 @@ export interface RegisterPayload {
 
 export const auth = {
   login: (data: LoginPayload) => {
-    return httpClient.post('/login', data, { baseURL: BASE_URL })
+    return httpClient.post<AccessToken>('/login', data, { baseURL: BASE_URL })
   },
   register: (data: RegisterPayload) => {
-    return httpClient.post('/register', data, { baseURL: BASE_URL })
+    return httpClient.post<AccessToken>('/register', data, { baseURL: BASE_URL })
   }
 }
