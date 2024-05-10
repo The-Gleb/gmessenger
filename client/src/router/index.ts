@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import ChatView from '../views/ChatView.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,7 +8,10 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: ChatView
+      component: ChatView,
+      meta: {
+        requiredAuth: true
+      }
     },
     {
       path: '/login',
@@ -20,6 +24,16 @@ const router = createRouter({
       component: () => import('@/views/RegisterView.vue')
     }
   ]
+})
+
+router.beforeEach((to, from, next) => {
+  const { isAuth } = useAuthStore()
+
+  if (!isAuth && to.meta.requiredAuth) {
+    return { name: 'login' }
+  }
+
+  next()
 })
 
 export default router

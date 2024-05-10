@@ -114,7 +114,7 @@ func main() {
 	groupMsgsHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
 	groupWSHandler.Middlewares(authMiddleWare.Websocket, corsMiddleware.AllowCors).AddToRouter(r)
 	setUsernameHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
-	userInfoHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
+	userInfoHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
 	oauthHandler.AddToRouter(r)
 
 	s := http.Server{
