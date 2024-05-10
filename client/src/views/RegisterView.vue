@@ -18,6 +18,10 @@ import {
 } from '@/utils/validators'
 import useVuelidate from '@vuelidate/core'
 import { auth } from '@/services/api/auth'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const form = ref<RegistrationForm>({
   email: '',
@@ -53,10 +57,20 @@ const register = async () => {
     return
   }
 
+  const { setAccessToken, setUser } = useAuthStore()
   const { repeatPassword, ...data } = form.value
 
-  const test = await auth.register(data)
-  console.log(test)
+  try {
+    const token = await auth.register(data)
+    setAccessToken(token.data.token)
+
+    const user = await auth.user()
+    setUser(user.data)
+
+    await router.push({ name: 'home' })
+  } catch (e) {
+    console.error(e)
+  }
 }
 </script>
 

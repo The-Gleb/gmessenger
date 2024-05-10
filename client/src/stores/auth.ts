@@ -2,12 +2,11 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import Cookies from 'js-cookie'
 import { type User } from '@/types'
-import { type AccessToken, type RefreshToken } from '@/types'
 
 export const useAuthStore = defineStore('user', () => {
   const user = ref<User | null>(null)
-  const accessToken = ref<AccessToken | null>(null)
-  const refreshToken = ref<RefreshToken | null>(null)
+  const accessToken = ref<string | null>(null)
+  const refreshToken = ref<string | null>(null)
 
   const isAuth = computed(() => {
     return !!user.value
@@ -29,7 +28,7 @@ export const useAuthStore = defineStore('user', () => {
     }
   }
 
-  const authTokensSetup = (accessToken: AccessToken) => {
+  const authTokensSetup = (accessToken: string) => {
     setAccessToken(accessToken)
   }
 
