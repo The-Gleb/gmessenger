@@ -18,8 +18,10 @@ type SessionService struct {
 	ttl  time.Duration
 }
 
-func NewSessionService(s SessionStorage) *SessionService {
-	return &SessionService{repo: s}
+func NewSessionService(s SessionStorage, duration time.Duration) *SessionService {
+	return &SessionService{
+		repo: s,
+		ttl:  duration}
 }
 
 //func (ss *SessionService) GetByToken(ctx context.Context, token string) (entity.Session, error) {

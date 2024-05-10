@@ -65,10 +65,10 @@ func main() {
 	messageStorage := storage.NewMessageStorage(dbClient)
 
 	userService := service.NewUserService(userStorage)
-	sessionService := service.NewSessionService(sessionStorage)
+	sessionService := service.NewSessionService(sessionStorage, time.Duration(24)*time.Hour)
 	messageService := service.NewMessageService(messageStorage)
 	dialogWSService := service.NewDialogService(messageStorage)
-	pasetoAuthService, err := service.NewPaseto(make([]byte, 32), time.Duration(1)*time.Hour)
+	pasetoAuthService, err := service.NewPaseto(make([]byte, 32), time.Duration(24)*time.Hour)
 	groupHub := service.NewGroupHub(groupClient)
 	otpService := service.NewOtpService()
 
