@@ -1,12 +1,15 @@
 # Telegleb
-Chat application server
+
+Chat application server /
 
 ## How to start
+
 ```
 docker compose up
 ```
 
 ## Functions
+
 - Registration
 - Logging in
 - Getting chat list
@@ -14,6 +17,7 @@ docker compose up
 - Group messages
 
 ## Functions to be implemented
+
 - Message status (sent, delivered, read)
 - Last seen
 - Chat members list
