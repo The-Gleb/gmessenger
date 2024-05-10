@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import BaseInput from '@/components/UI/BaseInput.vue'
 import BaseButton from '@/components/UI/BaseButton.vue'
 import BaseInputPassword from '@/components/UI/BaseInputPassword.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
-import { type LoginForm } from '@/types'
+import { type RegistrationForm } from '@/types'
 import {
   containsNumber,
   containsSpecialSymbol,
@@ -13,17 +13,21 @@ import {
   upperCaseAndLowerCase,
   withoutSpaces,
   maxLength,
-  minLength
+  minLength,
+  sameAsPassword
 } from '@/utils/validators'
 import useVuelidate from '@vuelidate/core'
 
-const form = ref<LoginForm>({
+const form = ref<RegistrationForm>({
   login: '',
-  password: ''
+  username: '',
+  password: '',
+  repeatPassword: ''
 })
 
 const rules = {
   login: { required, email },
+  username: { required },
   password: {
     required,
     minLength: minLength(8),
@@ -32,10 +36,14 @@ const rules = {
     containsNumber,
     withoutSpaces,
     containsSpecialSymbol
+  },
+  repeatPassword: {
+    required,
+    sameAs: sameAsPassword(computed(() => form.value.password))
   }
 }
 
-const v = useVuelidate<LoginForm>(rules, form)
+const v = useVuelidate<RegistrationForm>(rules, form)
 
 const login = async () => {
   await v.value.$validate()
@@ -44,37 +52,52 @@ const login = async () => {
 
 <template>
   <AuthLayout>
-    <div class="login-form">
-      <div class="login-form__inner">
-        <h1 class="login-form__welcome">Welcome back</h1>
-        <h1 class="login-form__title">Please enter your details to login</h1>
+    <div class="registration-form">
+      <div class="registration-form__inner">
+        <h1 class="registration-form__welcome">Welcome to Gmessenger</h1>
+        <h1 class="registration-form__title">Please fill the fields below to register</h1>
 
-        <div class="login-form__inputs">
+        <div class="registration-form__inputs">
           <BaseInput
             v-model="form.login"
             label="Email address"
             placeholder="Enter email address"
-            class="login-form__input"
+            class="registration-form__input"
             :error-messages="v.login.$errors"
+          />
+          <BaseInput
+            v-model="form.username"
+            label="Username"
+            placeholder="Enter username"
+            class="registration-form__input"
+            :error-messages="v.username.$errors"
           />
           <BaseInputPassword
             v-model="form.password"
             label="Password"
             placeholder="Enter password"
             type="password"
-            class="login-form__input"
+            class="registration-form__input"
             :error-messages="v.password.$errors"
           />
-          <BaseButton class="login-form__button" @click="login">Sign in</BaseButton>
+          <BaseInputPassword
+            v-model="form.repeatPassword"
+            label="Repeat password"
+            placeholder="Repeat password"
+            type="password"
+            class="registration-form__input"
+            :error-messages="v.repeatPassword.$errors"
+          />
+          <BaseButton class="registration-form__button" @click="login">Sign up</BaseButton>
         </div>
 
-        <div class="login-form__controls">
-          Don`t have an account ?
-          <RouterLink :to="{ name: 'register' }" class="login-form__link">Create now</RouterLink>
+        <div class="registration-form__controls">
+          Already have an account ?
+          <RouterLink :to="{ name: 'login' }" class="registration-form__link">Sign in</RouterLink>
         </div>
 
-        <div class="login-form__social">
-          <button class="login-form__link login-form__link_underlined">Login with Google</button>
+        <div class="registration-form__social">
+          <button class="registration-form__link registration-form__link_underlined">Login with Google</button>
         </div>
       </div>
     </div>
@@ -82,7 +105,7 @@ const login = async () => {
 </template>
 
 <style scoped lang="scss">
-.login-form {
+.registration-form {
   width: 400px;
   display: flex;
   background-color: var(--vt-c-black);
