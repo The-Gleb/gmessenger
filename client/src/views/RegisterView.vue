@@ -17,16 +17,17 @@ import {
   sameAsPassword
 } from '@/utils/validators'
 import useVuelidate from '@vuelidate/core'
+import { auth } from '@/services/api/auth'
 
 const form = ref<RegistrationForm>({
-  login: '',
+  email: '',
   username: '',
   password: '',
   repeatPassword: ''
 })
 
 const rules = {
-  login: { required, email },
+  email: { required, email },
   username: { required },
   password: {
     required,
@@ -45,8 +46,17 @@ const rules = {
 
 const v = useVuelidate<RegistrationForm>(rules, form)
 
-const login = async () => {
-  await v.value.$validate()
+const register = async () => {
+  const isValid = await v.value.$validate()
+
+  if (!isValid) {
+    return
+  }
+
+  const { repeatPassword, ...data } = form.value
+
+  const test = await auth.register(data)
+  console.log(test)
 }
 </script>
 
@@ -59,11 +69,11 @@ const login = async () => {
 
         <div class="registration-form__inputs">
           <BaseInput
-            v-model="form.login"
+            v-model="form.email"
             label="Email address"
             placeholder="Enter email address"
             class="registration-form__input"
-            :error-messages="v.login.$errors"
+            :error-messages="v.email.$errors"
           />
           <BaseInput
             v-model="form.username"
@@ -88,7 +98,7 @@ const login = async () => {
             class="registration-form__input"
             :error-messages="v.repeatPassword.$errors"
           />
-          <BaseButton class="registration-form__button" @click="login">Sign up</BaseButton>
+          <BaseButton class="registration-form__button" @click="register">Sign up</BaseButton>
         </div>
 
         <div class="registration-form__controls">

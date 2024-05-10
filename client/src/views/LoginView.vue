@@ -16,14 +16,15 @@ import {
   minLength
 } from '@/utils/validators'
 import useVuelidate from '@vuelidate/core'
+import { auth } from '@/services/api/auth'
 
 const form = ref<LoginForm>({
-  login: '',
+  email: '',
   password: ''
 })
 
 const rules = {
-  login: { required, email },
+  email: { required, email },
   password: {
     required,
     minLength: minLength(8),
@@ -38,7 +39,14 @@ const rules = {
 const v = useVuelidate<LoginForm>(rules, form)
 
 const login = async () => {
-  await v.value.$validate()
+  const isValid = await v.value.$validate()
+
+  if (!isValid) {
+    return
+  }
+
+  const test = await auth.login(form.value)
+  console.log(test)
 }
 </script>
 
@@ -51,11 +59,11 @@ const login = async () => {
 
         <div class="login-form__inputs">
           <BaseInput
-            v-model="form.login"
+            v-model="form.email"
             label="Email address"
             placeholder="Enter email address"
             class="login-form__input"
-            :error-messages="v.login.$errors"
+            :error-messages="v.email.$errors"
           />
           <BaseInputPassword
             v-model="form.password"
