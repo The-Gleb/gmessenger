@@ -106,8 +106,8 @@ func main() {
 	th := &templateHandler{fileName: "index.html"}
 	r.Get("/", th.ServeHTTP)
 
-	loginHandler.AddToRouter(r)
-	registerHandler.AddToRouter(r)
+	loginHandler.Middlewares(corsMiddleware.AllowCors).AddToRouter(r)
+	registerHandler.Middlewares(corsMiddleware.AllowCors).AddToRouter(r)
 	chatsHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
 	dialogMsgsHandler.Middlewares(authMiddleWare.Http, corsMiddleware.AllowCors).AddToRouter(r)
 	dialogWSHandler.Middlewares(authMiddleWare.Websocket, corsMiddleware.AllowCors).AddToRouter(r)
