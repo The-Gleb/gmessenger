@@ -36,19 +36,19 @@ func (m *authMiddleWare) Http(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Debug("auth middleware working")
 
-		c, err := r.Cookie("sessionToken")
-		if err != nil {
-			slog.Error("sessionToken cookie not found")
-			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
-			return
-		}
+		//c, err := r.Cookie("sessionToken")
+		//if err != nil {
+		//	slog.Error("sessionToken cookie not found")
+		//	http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
+		//	return
+		//}
 
 		bearerToken := r.Header.Get("Authorization")
 		reqToken := strings.Split(bearerToken, " ")[1]
 
 		slog.Debug("Token is", "token", reqToken)
 
-		userData, err := m.pasetoUsecase.Auth(r.Context(), c.Value)
+		userData, err := m.pasetoUsecase.Auth(r.Context(), reqToken)
 		if err != nil {
 			slog.Error(err.Error())
 			//http.Redirect(w, r, "/static/login/login.html", http.StatusMovedPermanently)
