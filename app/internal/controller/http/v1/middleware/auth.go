@@ -44,7 +44,14 @@ func (m *authMiddleWare) Http(next http.Handler) http.Handler {
 		//}
 
 		bearerToken := r.Header.Get("Authorization")
-		reqToken := strings.Split(bearerToken, " ")[1]
+		slice := strings.Split(bearerToken, " ")
+		if len(slice) != 2 {
+			slog.Error("Authorization is not valid")
+			//http.Redirect(w, r, "/static/login/login.html", http.StatusMovedPermanently)
+			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
+			return
+		}
+		reqToken := slice[1]
 
 		slog.Debug("Token is", "token", reqToken)
 
