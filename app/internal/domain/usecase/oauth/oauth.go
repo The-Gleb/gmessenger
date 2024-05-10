@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"time"
 )
+
+type sessionService interface {
+	Create(ctx context.Context, userID int64) (entity.Session, error)
+}
 
 type PasetoAuthService interface {
 	NewToken(data entity.TokenData) (string, error)
@@ -16,12 +19,17 @@ type userService interface {
 }
 
 type oauthUsecase struct {
-	userService   userService
-	pasetoService PasetoAuthService
+	userService    userService
+	pasetoService  PasetoAuthService
+	sessionService sessionService
 }
 
-func NewOAuthUsecase(us userService, ss PasetoAuthService) *oauthUsecase {
-	return &oauthUsecase{us, ss}
+func NewOAuthUsecase(us userService, ps PasetoAuthService, ss sessionService) *oauthUsecase {
+	return &oauthUsecase{
+		userService:    us,
+		pasetoService:  ps,
+		sessionService: ss,
+	}
 }
 
 func (uc *oauthUsecase) OAuth(ctx context.Context, email string) (string, bool, error) {
@@ -31,11 +39,17 @@ func (uc *oauthUsecase) OAuth(ctx context.Context, email string) (string, bool, 
 		return "", false, err
 	}
 
+	session, err := uc.sessionService.Create(ctx, id)
+	if err != nil {
+		return "", false, fmt.Errorf("[Login]: %w", err)
+	}
+
 	token, err := uc.pasetoService.NewToken(entity.TokenData{
-		Subject:  "sessionToken",
-		Duration: 5 * time.Second,
+		Subject:    "sessionToken",
+		Expiration: session.Expiry,
 		AdditionalClaims: entity.AdditionalClaims{
-			UserID: id,
+			UserID:    id,
+			SessionID: session.ID,
 		},
 		Footer: entity.Footer{MetaData: "footer"},
 	})
