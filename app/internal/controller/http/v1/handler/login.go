@@ -15,7 +15,7 @@ const (
 )
 
 type LoginUsecase interface {
-	Login(ctx context.Context, dto entity.LoginDTO) (entity.Session, error)
+	Login(ctx context.Context, dto entity.LoginDTO) (string, error)
 }
 
 type loginHandler struct {
@@ -58,7 +58,7 @@ func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 
 	slog.Debug("LoginDTO", "struct", dto)
 
-	s, err := h.usecase.Login(r.Context(), dto)
+	token, err := h.usecase.Login(r.Context(), dto)
 	if err != nil {
 		slog.Error(err.Error())
 
@@ -71,27 +71,15 @@ func (h *loginHandler) Login(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	c := http.Cookie{
-		Name:    "sessionToken",
-		Value:   s.Token,
-		Expires: s.Expiry,
+
+	err = json.NewEncoder(rw).Encode(struct {
+		Token string `json:"token"`
+	}{token})
+
+	if err != nil {
+		slog.Error("[handler.Login]: error encoding json into body", "error", err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	http.SetCookie(rw, &c)
-
-	rw.WriteHeader(http.StatusOK)
-
-	// b, err := json.Marshal(c)
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// 	http.Error(rw, "[loginHandler.Login]: error parsing to json", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// _, err = rw.Write(b)
-	// if err != nil {
-	// 	http.Error(rw, " error writing to body", http.StatusInternalServerError)
-	// 	return
-	// }
 
 }

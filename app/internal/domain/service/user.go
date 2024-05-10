@@ -12,6 +12,7 @@ type UserStorage interface {
 	CreateWithPassword(ctx context.Context, dto entity.RegisterUserDTO) (int64, error)
 	GetByEmail(ctx context.Context, email string) (entity.User, error)
 	GetAllUsersView(ctx context.Context) ([]entity.UserView, error)
+	GetUserInfoByID(ctx context.Context, id int64) (entity.UserInfo, error)
 
 	GetChatsView(ctx context.Context, userID int64) ([]entity.Chat, error)
 }
@@ -22,6 +23,10 @@ type UserService struct {
 
 func NewUserService(s UserStorage) *UserService {
 	return &UserService{repo: s}
+}
+
+func (us UserService) GetUserInfoByID(ctx context.Context, ID int64) (entity.UserInfo, error) {
+	return us.repo.GetUserInfoByID(ctx, ID)
 }
 
 func (us *UserService) GetByEmail(ctx context.Context, email string) (entity.User, error) {

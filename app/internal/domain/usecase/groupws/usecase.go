@@ -26,12 +26,12 @@ func (u *groupWSUsecase) OpenGroup(ctx context.Context, dto OpenGroupDTO) error 
 	// TODO: check if group exists and if user is it`s member
 
 	newClient := &client.Client{
-		Type:         client.Group, // probably useless
-		Conn:         dto.Websocket,
-		Message:      make(chan entity.Event, 5),
-		SenderID:     dto.SenderID,
-		SessionToken: dto.SenderToken,
-		GroupID:      dto.GroupID,
+		Type:      client.Group, // probably useless
+		Conn:      dto.Websocket,
+		Message:   make(chan entity.Event, 5),
+		SenderID:  dto.SenderID,
+		SessionID: dto.SessionID,
+		GroupID:   dto.GroupID,
 	}
 
 	u.groupHub.AddClient(newClient)

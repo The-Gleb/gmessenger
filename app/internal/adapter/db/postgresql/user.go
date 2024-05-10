@@ -180,6 +180,28 @@ func (us userStorage) CreateWithPassword(ctx context.Context, dto entity.Registe
 
 }
 
+func (us userStorage) GetUserInfoByID(ctx context.Context, ID int64) (entity.UserInfo, error) {
+
+	row := us.client.QueryRow(
+		ctx,
+		`SELECT username, email FROM users WHERE id = $1;`,
+		ID,
+	)
+
+	userInfo := entity.UserInfo{
+		ID: ID,
+	}
+	err := row.Scan(&userInfo.Username, &userInfo.Email)
+	if err != nil {
+		if stdErrors.Is(err, pgx.ErrNoRows) {
+			return entity.UserInfo{}, errors.NewDomainError(errors.ErrNoDataFound, "[storage.GetUserInfoByID]")
+		}
+		return entity.UserInfo{}, errors.NewDomainError(errors.ErrDB, "[storage.GetUserInfoByID]")
+	}
+
+	return userInfo, nil
+}
+
 func (us userStorage) GetByEmail(ctx context.Context, email string) (entity.User, error) {
 
 	tx, err := us.client.Begin(ctx)
@@ -289,6 +311,7 @@ func (us userStorage) GetChatsView(ctx context.Context, userID int64) ([]entity.
 			&messageID, &receiverID,
 			&senderID)
 
+		chat.Type = entity.PERSONAL_CHAT
 		chat.LastMessage.ID = messageID.Int64
 		chat.LastMessage.ReceiverID = receiverID.Int64
 		chat.LastMessage.SenderID = senderID.Int64

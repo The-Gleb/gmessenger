@@ -2,13 +2,14 @@ package v1
 
 import (
 	"encoding/json"
+	v1 "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/handler"
 	"log/slog"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/The-Gleb/gmessenger/app/internal/controller/http/dto"
-	"github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/handler/mocks"
+	"github.com/The-Gleb/gmessenger/app/internal/controller/http/v1_test/mocks"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	register_usecase "github.com/The-Gleb/gmessenger/app/internal/domain/usecase/register"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
@@ -19,14 +20,15 @@ import (
 
 func Test_registerHandler_Register(t *testing.T) {
 	validRegisterReqBody, err := json.Marshal(dto.RegisterUserDTO{
-		Login:    "login1",
+		Username: "user1",
+		Email:    "user1@gmail.com",
 		Password: "password1",
-		UserName: "user1",
 	})
 	require.NoError(t, err)
 
 	invalidRegisterReqBody, err := json.Marshal(dto.RegisterUserDTO{
-		Login:    "login1",
+		Username: "",
+		Email:    "",
 		Password: "password1",
 	})
 	require.NoError(t, err)
@@ -36,7 +38,7 @@ func Test_registerHandler_Register(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	mockRegisterUsecase := mocks.NewMockRegisterUsecase(ctrl)
-	registerHandler := NewRegisterHandler(mockRegisterUsecase)
+	registerHandler := v1.NewRegisterHandler(mockRegisterUsecase)
 	registerHandler.AddToRouter(r)
 	server := httptest.NewServer(r)
 
@@ -53,15 +55,15 @@ func Test_registerHandler_Register(t *testing.T) {
 			prepare: func() {
 				mockRegisterUsecase.
 					EXPECT().
-					Register(gomock.Any(), gomock.Eq(register_usecase.RegisterUserDTO{
-						Login:    "login1",
+					Register(gomock.Any(), gomock.Eq(entity.RegisterUserDTO{
+						Username: "",
+						Email:    "",
 						Password: "password1",
-						UserName: "user1",
 					})).
 					Return(entity.Session{
-						UserLogin: "login1",
-						Token:     "123",
-						Expiry:    time.Now().Add(time.Hour),
+						UserID: 12,
+						Token:  "123",
+						Expiry: time.Now().Add(time.Hour),
 					}, nil)
 			},
 		},

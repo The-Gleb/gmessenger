@@ -9,7 +9,9 @@ import (
 type Config struct {
 	RunAddress      string        `default:"localhost:8081" envvar:"GATEWAY_GATEWAY_ADDR"`
 	LogLevel        string        `default:"debug" flag:"loglevel" envvar:"LOGLEVEL"`
-	TokenTTL        time.Duration `default:"24h"`
+	PasetoKey       string        `flag:"pk" envvar:"PASETO_KEY"`
+	PasetoTTL       time.Duration `default:"24h"`
+	OtpTTL          time.Duration `default:"30s"`
 	GroupServerHost string        `default:"localhost" envvar:"GROUP_SERVICE_HOST"`
 	GroupServerPort int           `default:"8081" envvar:"GROUP_SERVICE_PORT"`
 	DB              Database      `default:"{}"`

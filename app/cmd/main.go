@@ -90,6 +90,7 @@ func main() {
 	groupMsgsHandler := handlers.NewGroupMsgsHandler(groupMsgsUsecase)
 	setUsernameHandler := handlers.NewSetUsernameHandler(setUsernameUsecase)
 	oauthHandler := handlers.NewOAuthHandler(oauthUsecase)
+	userInfoHandler := handlers.NewUserInfoHandler(userService)
 
 	r := chi.NewRouter()
 
@@ -108,6 +109,7 @@ func main() {
 	groupMsgsHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
 	groupWSHandler.Middlewares(authMiddleWare.Websocket).AddToRouter(r)
 	setUsernameHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
+	userInfoHandler.Middlewares(authMiddleWare.Http).AddToRouter(r)
 	oauthHandler.AddToRouter(r)
 
 	s := http.Server{

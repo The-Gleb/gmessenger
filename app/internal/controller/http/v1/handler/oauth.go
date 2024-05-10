@@ -2,7 +2,7 @@ package v1
 
 import (
 	"context"
-	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -24,7 +24,7 @@ const (
 )
 
 type OAuthUsecase interface {
-	OAuth(ctx context.Context, email string) (entity.Session, bool, error)
+	OAuth(ctx context.Context, email string) (string, bool, error)
 }
 
 type oauthHandler struct {
@@ -53,7 +53,9 @@ func NewOAuthHandler(usecase OAuthUsecase) *oauthHandler {
 		google.New(googleClientID, googleClientSecret, "http://localhost:8081/auth/google/callback"),
 	)
 
-	return &oauthHandler{usecase: usecase}
+	return &oauthHandler{usecase: usecase,
+		middlewares: make([]func(http.Handler) http.Handler, 0),
+	}
 }
 
 func (h *oauthHandler) AddToRouter(r *chi.Mux) {
@@ -118,7 +120,7 @@ func (h *oauthHandler) oauthCallback(rw http.ResponseWriter, r *http.Request) {
 	// t, _ := template.New("foo").Parse(userTemplate)
 	// t.Execute(rw, user)
 
-	s, isNew, err := h.usecase.OAuth(r.Context(), user.Email)
+	token, _, err := h.usecase.OAuth(r.Context(), user.Email)
 	if err != nil {
 		slog.Error(err.Error())
 
@@ -126,22 +128,15 @@ func (h *oauthHandler) oauthCallback(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := http.Cookie{
-		Name:    "sessionToken",
-		Value:   s.Token,
-		Expires: s.Expiry,
-		Path:    "/",
-	}
+	err = json.NewEncoder(rw).Encode(struct {
+		Token string `json:"token"`
+	}{token})
 
-	slog.Debug("cookie set", "struct", c)
-
-	http.SetCookie(rw, &c)
-
-	if isNew {
-		http.Redirect(rw, r, "/static/set_username/set_username.html", http.StatusFound)
+	if err != nil {
+		slog.Error("[handler.Register]: error encoding json into body", "error", err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(rw, r, "/chats", http.StatusMovedPermanently)
 }
 
 func (h *oauthHandler) oauthLogout(rw http.ResponseWriter, r *http.Request) {

@@ -62,10 +62,9 @@ func (h *groupWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
-	token, ok := r.Context().Value(v1.Key("token")).(string)
+	sessionID, ok := r.Context().Value(v1.Key("session")).(int64)
 	if !ok {
-		slog.Error("[handler.OpenGroup]: couldn't get session token from context")
-		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
+		http.Error(rw, "cannot get userID from context ", http.StatusInternalServerError)
 		return
 	}
 
@@ -77,10 +76,10 @@ func (h *groupWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	usecaseDTO := groupws_usecase.OpenGroupDTO{
-		Websocket:   conn,
-		SenderID:    userID,
-		GroupID:     groupID,
-		SenderToken: token,
+		Websocket: conn,
+		SenderID:  userID,
+		GroupID:   groupID,
+		SessionID: sessionID,
 	}
 
 	slog.Debug("group usecase dto ", "struct", usecaseDTO)

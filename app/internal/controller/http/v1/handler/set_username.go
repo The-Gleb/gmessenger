@@ -25,7 +25,9 @@ type setUsernameHandler struct {
 }
 
 func NewSetUsernameHandler(usecase username) *setUsernameHandler {
-	return &setUsernameHandler{usecase: usecase}
+	return &setUsernameHandler{usecase: usecase,
+		middlewares: make([]func(http.Handler) http.Handler, 0),
+	}
 }
 
 func (h *setUsernameHandler) AddToRouter(r *chi.Mux) {

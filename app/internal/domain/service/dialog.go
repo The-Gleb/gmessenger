@@ -30,12 +30,12 @@ func (ds *dialogService) AddClient(c *client.Client) {
 	ds.mu.Lock()
 	c.Hub = ds
 	if _, ok := ds.ClientList[c.SenderID]; !ok {
-		ds.ClientList[c.SenderID] = make(map[string]*client.Client)
+		ds.ClientList[c.SenderID] = make(map[int64]*client.Client)
 	}
-	ds.ClientList[c.SenderID][c.SessionToken] = c
+	ds.ClientList[c.SenderID][c.SessionID] = c
 	ds.mu.Unlock()
 
-	slog.Debug("client added to the list", "struct", ds.ClientList[c.SenderID][c.SessionToken])
+	slog.Debug("client added to the list", "struct", ds.ClientList[c.SenderID][c.SessionID])
 
 	go c.WriteMessage()
 	c.ReadMessage()
@@ -47,7 +47,7 @@ func (ds *dialogService) RemoveClient(c *client.Client) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	delete(ds.ClientList[c.SenderID], c.SessionToken)
+	delete(ds.ClientList[c.SenderID], c.SessionID)
 
 	if len(ds.ClientList[c.SenderID]) == 0 {
 		delete(ds.ClientList, c.SenderID)

@@ -67,10 +67,9 @@ func (h *dialogWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
-	token, ok := r.Context().Value(v1.Key("token")).(string)
+	sessionID, ok := r.Context().Value(v1.Key("session")).(int64)
 	if !ok {
-		slog.Error("[dialogWSHandler.ServeHTTP]: couldn't get session token from context")
-		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
+		http.Error(rw, "cannot get userID from context ", http.StatusInternalServerError)
 		return
 	}
 
@@ -82,10 +81,10 @@ func (h *dialogWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	usecaseDTO := dialogws_usecase.OpenDialogDTO{
-		Websocket:   conn,
-		SenderID:    userID,
-		ReceiverID:  receiverID,
-		SenderToken: token,
+		Websocket:  conn,
+		SenderID:   userID,
+		ReceiverID: receiverID,
+		SessionID:  sessionID,
 	}
 
 	slog.Debug("dialog usecase dto ", "struct", usecaseDTO)

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"log/slog"
 	"net/http"
 
@@ -11,15 +12,23 @@ import (
 type Key string
 
 type AuthUsecase interface {
-	Auth(ctx context.Context, token string) (int64, error)
+	Auth(ctx context.Context, token string) (entity.AdditionalClaims, error)
+}
+
+type otpService interface {
+	VerifyOtp(token string) (entity.OTPData, bool)
 }
 
 type authMiddleWare struct {
-	usecase AuthUsecase
+	pasetoUsecase AuthUsecase
+	otpSvc        otpService
 }
 
-func NewAuthMiddleware(usecase AuthUsecase) *authMiddleWare {
-	return &authMiddleWare{usecase}
+func NewAuthMiddleware(usecase AuthUsecase, otpService otpService) *authMiddleWare {
+	return &authMiddleWare{
+		usecase,
+		otpService,
+	}
 }
 
 func (m *authMiddleWare) Http(next http.Handler) http.Handler {
@@ -29,22 +38,22 @@ func (m *authMiddleWare) Http(next http.Handler) http.Handler {
 		c, err := r.Cookie("sessionToken")
 		if err != nil {
 			slog.Error("sessionToken cookie not found")
-			http.Redirect(w, r, "/static/login/login.html", http.StatusMovedPermanently)
-			//http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
+			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
 			return
 		}
 		slog.Debug("Cookie is", "cookie", c.Value)
 
-		userID, err := m.usecase.Auth(r.Context(), c.Value)
+		userData, err := m.pasetoUsecase.Auth(r.Context(), c.Value)
 		if err != nil {
 			slog.Error(err.Error())
-			http.Redirect(w, r, "/static/login/login.html", http.StatusMovedPermanently)
-			//http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
+			//http.Redirect(w, r, "/static/login/login.html", http.StatusMovedPermanently)
+			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
 			return
 		}
-		slog.Debug("got userID from auth usecase", "ID", userID)
+		slog.Debug("got userID from auth usecase", "ID", userData.UserID)
 
-		ctx := context.WithValue(r.Context(), Key("userID"), userID)
+		ctx := context.WithValue(r.Context(), Key("userID"), userData.UserID)
+		ctx = context.WithValue(r.Context(), Key("sessionID"), userData.SessionID)
 
 		r = r.WithContext(ctx)
 
@@ -64,15 +73,15 @@ func (m *authMiddleWare) Websocket(next http.Handler) http.Handler {
 		}
 		slog.Debug("got token", "token", token)
 
-		userLogin, err := m.usecase.Auth(r.Context(), token)
-		if err != nil {
-			slog.Error(err.Error())
+		data, ok := m.otpSvc.VerifyOtp(token)
+		if !ok {
+			slog.Error("otp verification failed")
 			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), Key("userLogin"), userLogin)
-		ctx = context.WithValue(ctx, Key("token"), token)
+		ctx := context.WithValue(r.Context(), Key("userID"), data.UserID)
+		ctx = context.WithValue(r.Context(), Key("sessionID"), data.SessionID)
 
 		r = r.WithContext(ctx)
 
