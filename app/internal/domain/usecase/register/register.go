@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type sessionService interface {
-	Create(ctx context.Context, session entity.Session) error
+type pasetoAuthService interface {
+	NewToken(data entity.TokenData) (string, error)
 }
 
 type userService interface {
@@ -20,41 +19,41 @@ type userService interface {
 }
 
 type registerUsecase struct {
-	userService    userService
-	sessionService sessionService
+	userService   userService
+	pasetoService pasetoAuthService
 }
 
-func NewRegisterUsecase(us userService, ss sessionService) *registerUsecase {
+func NewRegisterUsecase(us userService, ss pasetoAuthService) *registerUsecase {
 	return &registerUsecase{us, ss}
 }
 
-func (r *registerUsecase) Register(ctx context.Context, dto entity.RegisterUserDTO) (entity.Session, error) {
+func (r *registerUsecase) Register(ctx context.Context, dto entity.RegisterUserDTO) (string, error) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return entity.Session{}, fmt.Errorf("[usecase.Register]: %w", err)
+		return "", fmt.Errorf("[usecase.Register]: %w", err)
 	}
 	dto.Password = string(hashedPassword)
 
 	id, err := r.userService.CreateWithPassword(ctx, dto)
 	if err != nil {
-		return entity.Session{}, fmt.Errorf("[usecase.Register]: %w", err)
+		return "", fmt.Errorf("[usecase.Register]: %w", err)
 	}
 
 	slog.Debug("user created", "ID", id)
 
-	// TODO: JWT
-	newSession := entity.Session{
-		UserID: id,
-		Token:  uuid.NewString(),
-		Expiry: time.Now().Add(24 * time.Hour), // TODO config
-	}
-
-	err = r.sessionService.Create(ctx, newSession)
+	token, err := r.pasetoService.NewToken(entity.TokenData{
+		Subject:  "sessionToken",
+		Duration: 5 * time.Second,
+		AdditionalClaims: entity.AdditionalClaims{
+			UserID: id,
+		},
+		Footer: entity.Footer{MetaData: "footer"},
+	})
 
 	if err != nil {
-		return entity.Session{}, fmt.Errorf("[usecase.Register]: %w", err)
+		return "", fmt.Errorf("[usecase.Register]: %w", err)
 	}
 
-	return newSession, nil
+	return token, nil
 }

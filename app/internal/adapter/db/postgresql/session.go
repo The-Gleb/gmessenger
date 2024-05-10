@@ -10,9 +10,7 @@ import (
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
 	"github.com/The-Gleb/gmessenger/app/pkg/client/postgresql"
-	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var _ service.SessionStorage = new(sessionStorage)
@@ -29,16 +27,16 @@ func NewSessionStorage(client postgresql.Client) *sessionStorage {
 	}
 }
 
-func (ss *sessionStorage) GetByToken(ctx context.Context, token string) (entity.Session, error) {
+func (ss *sessionStorage) GetByID(ctx context.Context, ID int64) (entity.Session, error) {
 
 	row := ss.client.QueryRow(
 		ctx,
 		`SELECT user_id, expiry FROM sessions WHERE session_token = $1`,
-		token,
+		ID,
 	)
 
 	session := entity.Session{
-		Token: token,
+		ID: ID,
 	}
 	err := row.Scan(&session.UserID, &session.Expiry)
 	if err != nil {
@@ -53,23 +51,23 @@ func (ss *sessionStorage) GetByToken(ctx context.Context, token string) (entity.
 
 }
 
-func (ss *sessionStorage) Create(ctx context.Context, session entity.Session) error {
+func (ss *sessionStorage) Create(ctx context.Context, session entity.Session) (entity.Session, error) {
 
-	_, err := ss.client.Exec(
+	row := ss.client.QueryRow(
 		ctx,
-		`INSERT INTO sessions (user_id, session_token, expiry) VALUES ($1, $2, $3)`,
-		session.UserID, session.Token, session.Expiry,
+		`INSERT INTO sessions (user_id, expiry) VALUES ($1, $2)
+		RETURNING id;`,
+		session.UserID, session.Expiry,
 	)
+
+	err := row.Scan(&session.ID)
+
 	if err != nil {
 		slog.Error(err.Error())
-		var pgErr *pgconn.PgError
-		if stdErrors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
-			return errors.NewDomainError(errors.ErrNotUniqueToken, "[storage.Create]")
-		}
-		return errors.NewDomainError(errors.ErrDB, "[storage.Create]:")
+		return entity.Session{}, errors.NewDomainError(errors.ErrDB, "[storage.Create]:")
 	}
 
-	return nil
+	return session, nil
 
 }
 

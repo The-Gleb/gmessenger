@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type ClientSessions map[string]*client.Client
+type ClientSessions map[int64]*client.Client
 
 type Room struct {
 	ID      int64
@@ -72,7 +72,7 @@ func (gh *groupHub) AddClient(c *client.Client) {
 		room.Clients[c.SenderID] = clientSessions
 	}
 
-	clientSessions[c.SessionToken] = c
+	clientSessions[c.SessionID] = c
 	gh.mu.Unlock()
 
 	go c.WriteMessage()
@@ -85,7 +85,7 @@ func (gh *groupHub) RemoveClient(c *client.Client) {
 	gh.mu.Lock()
 	defer gh.mu.Unlock()
 
-	delete(gh.Rooms[c.GroupID].Clients[c.SenderID], c.SessionToken)
+	delete(gh.Rooms[c.GroupID].Clients[c.SenderID], c.SessionID)
 
 	// client.CloseWSConnection(c.Conn, websocket.CloseNormalClosure)
 

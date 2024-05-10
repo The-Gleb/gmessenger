@@ -26,7 +26,10 @@ type chatsHandler struct {
 }
 
 func NewChatsHandler(usecase ChatsUsecase) *chatsHandler {
-	return &chatsHandler{usecase: usecase}
+	return &chatsHandler{
+		usecase:     usecase,
+		middlewares: make([]func(http.Handler) http.Handler, 0),
+	}
 }
 
 func (h *chatsHandler) AddToRouter(r *chi.Mux) {
@@ -88,22 +91,16 @@ func (h *chatsHandler) ShowChats(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.usecase.ShowChats(r.Context(), userID)
+	chats, err := h.usecase.ShowChats(r.Context(), userID)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(rw, err.Error(), http.StatusInternalServerError) // TODO:
 		return
 	}
 
-	_, err = json.Marshal(testChats)
+	err = json.NewEncoder(rw).Encode(chats)
 	if err != nil {
-		http.Error(rw, "error parsing to json", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = rw.Write([]byte("here are the chats"))
-	if err != nil {
-		http.Error(rw, "error writing to body", http.StatusInternalServerError)
+		http.Error(rw, "error encoding to json", http.StatusInternalServerError)
 		return
 	}
 

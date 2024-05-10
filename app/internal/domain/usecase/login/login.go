@@ -3,16 +3,17 @@ package login_usecase
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type sessionService interface {
-	Create(ctx context.Context, session entity.Session) error
+	Create(ctx context.Context, userID int64) (entity.Session, error)
+}
+
+type pasetoAuthService interface {
+	NewToken(data entity.TokenData) (string, error)
 }
 
 type userService interface {
@@ -22,39 +23,49 @@ type userService interface {
 type loginUsecase struct {
 	userService    userService
 	sessionService sessionService
+	pasetoService  pasetoAuthService
 }
 
-func NewLoginUsecase(us userService, ss sessionService) *loginUsecase {
-	return &loginUsecase{us, ss}
+func NewLoginUsecase(us userService, ps pasetoAuthService, ss sessionService) *loginUsecase {
+	return &loginUsecase{
+		userService:    us,
+		sessionService: ss,
+		pasetoService:  ps,
+	}
 }
 
-func (uc *loginUsecase) Login(ctx context.Context, dto entity.LoginDTO) (entity.Session, error) {
+func (uc *loginUsecase) Login(ctx context.Context, dto entity.LoginDTO) (string, error) {
 
 	user, err := uc.userService.GetByEmail(ctx, dto.Email)
 	if err != nil {
 		if errors.Code(err) == errors.ErrNoDataFound {
-			return entity.Session{}, errors.NewDomainError(errors.ErrUCWrongLoginOrPassword, "[usecase.Login]:")
+			return "", errors.NewDomainError(errors.ErrUCWrongLoginOrPassword, "[usecase.Login]:")
 		}
-		return entity.Session{}, fmt.Errorf("[usecase.Login]: %w", err)
+		return "", fmt.Errorf("[usecase.Login]: %w", err)
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(dto.Password))
 	if err != nil {
-		return entity.Session{}, errors.NewDomainError(errors.ErrUCWrongLoginOrPassword, "[usecase.Login]:")
+		return "", errors.NewDomainError(errors.ErrUCWrongLoginOrPassword, "[usecase.Login]:")
 	}
 
-	// TODO: make JWT
-	newSession := entity.Session{
-		UserID: user.ID,
-		Token:  uuid.NewString(),
-		Expiry: time.Now().Add(24 * time.Hour), // TODO config
-	}
-
-	err = uc.sessionService.Create(ctx, newSession)
-
+	session, err := uc.sessionService.Create(ctx, user.ID)
 	if err != nil {
-		return entity.Session{}, fmt.Errorf("[Login]: %w", err)
+		return "", fmt.Errorf("[Login]: %w", err)
 	}
 
-	return newSession, nil
+	token, err := uc.pasetoService.NewToken(entity.TokenData{
+		Subject:    "sessionToken",
+		Expiration: session.Expiry,
+		AdditionalClaims: entity.AdditionalClaims{
+			UserID:    user.ID,
+			SessionID: session.ID,
+		},
+		Footer: entity.Footer{MetaData: "footer"},
+	})
+	if err != nil {
+		return "", fmt.Errorf("[Login]: %w", err)
+	}
+
+	return token, nil
 }

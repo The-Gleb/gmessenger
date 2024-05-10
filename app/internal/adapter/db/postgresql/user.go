@@ -311,6 +311,7 @@ func (us userStorage) GetChatsView(ctx context.Context, userID int64) ([]entity.
 			&messageID, &receiverID,
 			&senderID)
 
+		chat.Type = entity.PERSONAL_CHAT
 		chat.LastMessage.ID = messageID.Int64
 		chat.LastMessage.ReceiverID = receiverID.Int64
 		chat.LastMessage.SenderID = senderID.Int64

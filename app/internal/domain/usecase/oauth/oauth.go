@@ -4,14 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/google/uuid"
 	"time"
 )
 
-type SessionService interface {
-	Create(ctx context.Context, session entity.Session) error
-	GetByToken(ctx context.Context, token string) (entity.Session, error)
-	Delete(ctx context.Context, token string) error
+type PasetoAuthService interface {
+	NewToken(data entity.TokenData) (string, error)
 }
 
 type userService interface {
@@ -19,33 +16,33 @@ type userService interface {
 }
 
 type oauthUsecase struct {
-	userService    userService
-	sessionService SessionService
+	userService   userService
+	pasetoService PasetoAuthService
 }
 
-func NewOAuthUsecase(us userService, ss SessionService) *oauthUsecase {
+func NewOAuthUsecase(us userService, ss PasetoAuthService) *oauthUsecase {
 	return &oauthUsecase{us, ss}
 }
 
-func (uc *oauthUsecase) OAuth(ctx context.Context, email string) (entity.Session, bool, error) {
+func (uc *oauthUsecase) OAuth(ctx context.Context, email string) (string, bool, error) {
 
 	id, isNew, err := uc.userService.GetOrCreateByEmail(ctx, email)
 	if err != nil {
-		return entity.Session{}, false, err
+		return "", false, err
 	}
 
-	newSession := entity.Session{
-		UserID: id,
-		Token:  uuid.NewString(),
-		Expiry: time.Now().Add(24 * time.Hour), // TODO: config
-	}
-
-	// TODO: make JWT token
-	err = uc.sessionService.Create(ctx, newSession)
+	token, err := uc.pasetoService.NewToken(entity.TokenData{
+		Subject:  "sessionToken",
+		Duration: 5 * time.Second,
+		AdditionalClaims: entity.AdditionalClaims{
+			UserID: id,
+		},
+		Footer: entity.Footer{MetaData: "footer"},
+	})
 
 	if err != nil {
-		return entity.Session{}, false, fmt.Errorf("[usecase.OAuth]: %w", err)
+		return "", false, fmt.Errorf("[usecase.OAuth]: %w", err)
 	}
 
-	return newSession, isNew, nil
+	return token, isNew, nil
 }

@@ -3,28 +3,31 @@ package auth_usecase
 import (
 	"context"
 	"fmt"
-
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 )
 
-type SessionService interface {
-	GetByToken(ctx context.Context, token string) (entity.Session, error)
+type PasetoAuthService interface {
+	VerifyToken(token string) (*entity.ServiceClaims, error)
 }
 
 type authUsecase struct {
-	sessionService SessionService
+	authService PasetoAuthService
 }
 
-func NewAuthUsecase(ss SessionService) *authUsecase {
+func NewAuthUsecase(ss PasetoAuthService) *authUsecase {
 	return &authUsecase{ss}
 }
 
-func (uc *authUsecase) Auth(ctx context.Context, token string) (int64, error) {
+func (uc *authUsecase) Auth(ctx context.Context, token string) (entity.AdditionalClaims, error) {
 
-	session, err := uc.sessionService.GetByToken(ctx, token)
+	serviceClaims, err := uc.authService.VerifyToken(token)
 	if err != nil {
-		return 0, fmt.Errorf("[Auth]: %w", err)
+		return entity.AdditionalClaims{}, fmt.Errorf("[Auth]: %w", err)
 	}
 
-	return session.UserID, nil
+	//if serviceClaims.Expiration.Before(time.Now()) {
+	//
+	//}
+
+	return serviceClaims.AdditionalClaims, nil
 }

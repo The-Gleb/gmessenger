@@ -16,7 +16,7 @@ const (
 )
 
 type RegisterUsecase interface {
-	Register(ctx context.Context, dto entity.RegisterUserDTO) (entity.Session, error)
+	Register(ctx context.Context, dto entity.RegisterUserDTO) (string, error)
 }
 
 type registerHandler struct {
@@ -25,7 +25,9 @@ type registerHandler struct {
 }
 
 func NewRegisterHandler(usecase RegisterUsecase) *registerHandler {
-	return &registerHandler{usecase: usecase}
+	return &registerHandler{usecase: usecase,
+		middlewares: make([]func(http.Handler) http.Handler, 0),
+	}
 }
 
 func (h *registerHandler) AddToRouter(r *chi.Mux) {
@@ -67,7 +69,7 @@ func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 
 	// for now assume that email is verified
 
-	s, err := h.usecase.Register(r.Context(), dto)
+	token, err := h.usecase.Register(r.Context(), dto)
 	if err != nil {
 		slog.Error(err.Error())
 
@@ -81,22 +83,15 @@ func (h *registerHandler) Register(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	c := http.Cookie{
-		Name:    "sessionToken",
-		Value:   s.Token,
-		Expires: s.Expiry,
+	err = json.NewEncoder(rw).Encode(struct {
+		Token string `json:"token"`
+	}{token})
+
+	if err != nil {
+		slog.Error("[handler.Register]: error encoding json into body", "error", err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	http.SetCookie(rw, &c)
-
-	rw.WriteHeader(http.StatusOK)
-
-	// b, err := json.Marshal(s)
-	// if err != nil {
-	// 	slog.Error("[handler.Register]: error unmarshalling json", "error", err)
-	// 	http.Error(rw, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
-	// rw.Write(b)
+	//rw.WriteHeader(http.StatusOK)
 
 }

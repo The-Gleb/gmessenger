@@ -26,7 +26,7 @@ CREATE TABLE "oauth2_info" (
 );
 
 CREATE TABLE "sessions" (
-  "session_id" bigserial PRIMARY KEY,
+  "id" bigserial PRIMARY KEY,
   "session_token" varchar UNIQUE,
   "user_id" bigserial REFERENCES users ("id"),
   "expiry" timestamp

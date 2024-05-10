@@ -25,7 +25,10 @@ type userInfoHandler struct {
 }
 
 func NewUserInfoHandler(usecase UserInfoUsecase) *userInfoHandler {
-	return &userInfoHandler{usecase: usecase}
+	return &userInfoHandler{
+		usecase:     usecase,
+		middlewares: make([]func(http.Handler) http.Handler, 0),
+	}
 }
 
 func (h *userInfoHandler) AddToRouter(r *chi.Mux) {
