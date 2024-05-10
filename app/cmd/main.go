@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	storage "github.com/The-Gleb/gmessenger/app/internal/adapter/db/postgresql"
 	"github.com/The-Gleb/gmessenger/app/internal/config"
@@ -67,20 +68,22 @@ func main() {
 	sessionService := service.NewSessionService(sessionStorage)
 	messageService := service.NewMessageService(messageStorage)
 	dialogWSService := service.NewDialogService(messageStorage)
+	pasetoAuthService, err := service.NewPaseto(make([]byte, 32), time.Duration(1)*time.Hour)
 	groupHub := service.NewGroupHub(groupClient)
+	otpService := service.NewOtpService()
 
-	loginUsecase := login_usecase.NewLoginUsecase(userService, sessionService)
-	registerUsecase := register_usecase.NewRegisterUsecase(userService, sessionService)
-	authUsecase := auth_usecase.NewAuthUsecase(sessionService)
+	loginUsecase := login_usecase.NewLoginUsecase(userService, pasetoAuthService, sessionService)
+	registerUsecase := register_usecase.NewRegisterUsecase(userService, pasetoAuthService, sessionService)
+	authUsecase := auth_usecase.NewAuthUsecase(pasetoAuthService)
 	chatsUsecase := chats_usecase.NewChatsUsecase(userService, groupClient, messageService)
 	dialogWSUsecase := dialogws_usecase.NewDialogWSUsecase(dialogWSService)
 	dialogMsgsUsecase := dialogmsgs_usecase.NewDialogMsgsUsecase(messageService)
 	groupWSUsecase := groupws_usecase.NewGroupWSUsecase(groupHub)
 	groupMsgsUsecase := groupmsgs_usecase.NewGroupMsgsUsecase(groupClient)
 	setUsernameUsecase := username_usecase.NewUsernameUsecase(userService)
-	oauthUsecase := oauth_usecase.NewOAuthUsecase(userService, sessionService)
+	oauthUsecase := oauth_usecase.NewOAuthUsecase(userService, pasetoAuthService, sessionService)
 
-	authMiddleWare := middlewares.NewAuthMiddleware(authUsecase)
+	authMiddleWare := middlewares.NewAuthMiddleware(authUsecase, otpService)
 	loginHandler := handlers.NewLoginHandler(loginUsecase)
 	registerHandler := handlers.NewRegisterHandler(registerUsecase)
 	chatsHandler := handlers.NewChatsHandler(chatsUsecase)

@@ -3,12 +3,14 @@ package register_usecase
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"time"
-
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"golang.org/x/crypto/bcrypt"
+	"log/slog"
 )
+
+type sessionService interface {
+	Create(ctx context.Context, userID int64) (entity.Session, error)
+}
 
 type pasetoAuthService interface {
 	NewToken(data entity.TokenData) (string, error)
@@ -19,12 +21,17 @@ type userService interface {
 }
 
 type registerUsecase struct {
-	userService   userService
-	pasetoService pasetoAuthService
+	userService    userService
+	pasetoService  pasetoAuthService
+	sessionService sessionService
 }
 
-func NewRegisterUsecase(us userService, ss pasetoAuthService) *registerUsecase {
-	return &registerUsecase{us, ss}
+func NewRegisterUsecase(us userService, ps pasetoAuthService, ss sessionService) *registerUsecase {
+	return &registerUsecase{
+		userService:    us,
+		pasetoService:  ps,
+		sessionService: ss,
+	}
 }
 
 func (r *registerUsecase) Register(ctx context.Context, dto entity.RegisterUserDTO) (string, error) {
@@ -42,11 +49,17 @@ func (r *registerUsecase) Register(ctx context.Context, dto entity.RegisterUserD
 
 	slog.Debug("user created", "ID", id)
 
+	session, err := r.sessionService.Create(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("[Login]: %w", err)
+	}
+
 	token, err := r.pasetoService.NewToken(entity.TokenData{
-		Subject:  "sessionToken",
-		Duration: 5 * time.Second,
+		Subject:    "sessionToken",
+		Expiration: session.Expiry,
 		AdditionalClaims: entity.AdditionalClaims{
-			UserID: id,
+			UserID:    id,
+			SessionID: session.ID,
 		},
 		Footer: entity.Footer{MetaData: "footer"},
 	})

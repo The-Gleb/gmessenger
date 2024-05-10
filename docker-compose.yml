@@ -31,26 +31,26 @@ services:
   #   command: go run app/cmd/main.go
 
 
-  gateway:
-    build: ./app
-    depends_on:
-      - gateway_db
-    volumes:
-      - .:/usr/src/app
-    env_file:
-      - .env
-    environment:
-      - GATEWAY_DB_HOST=gateway_db
-      - GATEWAY_DB_PORT=5432
-      - GATEWAY_DB_NAME=${GATEWAY_POSTGRES_USER}
-      - GATEWAY_DB_USERNAME=${GATEWAY_POSTGRES_USER}
-      - GATEWAY_DB_PASS=${GATEWAY_POSTGRES_PASSWORD}
-      - GROUP_SERVICE_HOST=group_service
-      - GROUP_SERVICE_PORT=8081
-      - LOGLEVEL=debug
-    ports:
-      - "8081:8081"
-    command: go run app/cmd/main.go
+#  gateway:
+#    build: ./app
+#    depends_on:
+#      - gateway_db
+#    volumes:
+#      - .:/usr/src/app
+#    env_file:
+#      - .env
+#    environment:
+#      - GATEWAY_DB_HOST=gateway_db
+#      - GATEWAY_DB_PORT=5432
+#      - GATEWAY_DB_NAME=${GATEWAY_POSTGRES_USER}
+#      - GATEWAY_DB_USERNAME=${GATEWAY_POSTGRES_USER}
+#      - GATEWAY_DB_PASS=${GATEWAY_POSTGRES_PASSWORD}
+#      - GROUP_SERVICE_HOST=group_service
+#      - GROUP_SERVICE_PORT=8081
+#      - LOGLEVEL=debug
+#    ports:
+#      - "8081:8081"
+#    command: go run app/cmd/main.go
 
   gateway_db:
     image: postgres:alpine

@@ -5,6 +5,7 @@ import (
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
 )
@@ -41,7 +42,11 @@ func (m *authMiddleWare) Http(next http.Handler) http.Handler {
 			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
 			return
 		}
-		slog.Debug("Cookie is", "cookie", c.Value)
+
+		bearerToken := r.Header.Get("Authorization")
+		reqToken := strings.Split(bearerToken, " ")[1]
+
+		slog.Debug("Token is", "token", reqToken)
 
 		userData, err := m.pasetoUsecase.Auth(r.Context(), c.Value)
 		if err != nil {
@@ -65,7 +70,7 @@ func (m *authMiddleWare) Websocket(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Debug("websocket auth middleware working")
 
-		token := r.URL.Query().Get("token")
+		token := r.URL.Query().Get("otp")
 		if token == "" {
 			slog.Error("there is no token in a query")
 			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)

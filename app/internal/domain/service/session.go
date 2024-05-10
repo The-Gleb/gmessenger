@@ -6,12 +6,10 @@ import (
 	"time"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/The-Gleb/gmessenger/app/internal/errors"
 )
 
 type SessionStorage interface {
 	Create(ctx context.Context, session entity.Session) (entity.Session, error)
-	GetByToken(ctx context.Context, token string) (entity.Session, error)
 	Delete(ctx context.Context, token string) error
 }
 
@@ -24,17 +22,17 @@ func NewSessionService(s SessionStorage) *SessionService {
 	return &SessionService{repo: s}
 }
 
-func (ss *SessionService) GetByToken(ctx context.Context, token string) (entity.Session, error) {
-
-	session, err := ss.repo.GetByToken(ctx, token)
-	if err != nil {
-		return entity.Session{}, err
-	}
-	if session.IsExpired() {
-		return session, errors.NewDomainError(errors.ErrSessionExpired, "[service.GetByToken]:")
-	}
-	return session, nil
-}
+//func (ss *SessionService) GetByToken(ctx context.Context, token string) (entity.Session, error) {
+//
+//	session, err := ss.repo.GetByToken(ctx, token)
+//	if err != nil {
+//		return entity.Session{}, err
+//	}
+//	if session.IsExpired() {
+//		return session, errors.NewDomainError(errors.ErrSessionExpired, "[service.GetByToken]:")
+//	}
+//	return session, nil
+//}
 
 func (ss *SessionService) Create(ctx context.Context, userID int64) (entity.Session, error) {
 
