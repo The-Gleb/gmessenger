@@ -45,10 +45,11 @@ func (h *userInfoHandler) Middlewares(md ...func(http.Handler) http.Handler) *us
 }
 
 func (h *userInfoHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	slog.Debug("in chat handler")
+	slog.Debug("in me handler")
 
 	userID, ok := r.Context().Value(v1.Key("userID")).(int64)
 	if !ok {
+		slog.Error("cannot get userID from context ")
 		http.Error(rw, "cannot get userID from context ", http.StatusInternalServerError)
 		return
 	}

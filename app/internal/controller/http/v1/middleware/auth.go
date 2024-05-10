@@ -65,7 +65,7 @@ func (m *authMiddleWare) Http(next http.Handler) http.Handler {
 		slog.Debug("got userID from auth usecase", "ID", userData.UserID)
 
 		ctx := context.WithValue(r.Context(), Key("userID"), userData.UserID)
-		ctx = context.WithValue(r.Context(), Key("sessionID"), userData.SessionID)
+		ctx = context.WithValue(ctx, Key("sessionID"), userData.SessionID)
 
 		r = r.WithContext(ctx)
 
