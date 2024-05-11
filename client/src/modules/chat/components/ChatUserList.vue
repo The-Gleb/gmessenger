@@ -1,4 +1,15 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { ref } from 'vue'
+import { type ChatListItem } from '@/types'
+
+type Props = {
+  chatList: ChatListItem[]
+}
+
+const props = defineProps<Props>()
+
+const currentChatId = ref(props.chatList[0].reciever_id)
+</script>
 
 <template>
   <section class="chat-user-list">
@@ -7,17 +18,16 @@
     </div>
     <div class="chat-user-list__content">
       <button
-        v-for="(item, idx) in 10"
-        :key="item"
-        :class="['chat-user-list-item', { 'chat-user-list-item_active': idx === 3 }]"
+        v-for="item in chatList"
+        :key="item.reciever_id"
+        :class="['chat-user-list-item', { 'chat-user-list-item_active': item.reciever_id === currentChatId }]"
       >
         <img class="chat-user-list-item__avatar" src="@/assets/img/avatar.png" />
         <div class="chat-user-list-item__body">
           <div class="chat-user-list-item__user-info">
-            <p class="chat-user-list-item__username">George Paul</p>
-            <span class="chat-user-list-item__date">06 Jan</span>
+            <p class="chat-user-list-item__username">{{ item.receiver_name }}</p>
           </div>
-          <p class="chat-user-list-item__text">Hello whats app telegram how are you</p>
+          <p class="chat-user-list-item__text">{{ item.last_message.text }}</p>
         </div>
       </button>
     </div>
@@ -45,6 +55,8 @@
 
   &__content {
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
     overflow: auto;
     margin-top: 16px;
     -ms-overflow-style: none;

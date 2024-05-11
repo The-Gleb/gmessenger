@@ -30,7 +30,8 @@ router.beforeEach((to, from, next) => {
   const { isAuth } = useAuthStore()
 
   if (!isAuth && to.meta.requiredAuth) {
-    return { name: 'login' }
+    next({ name: 'login' })
+    return
   }
 
   next()
