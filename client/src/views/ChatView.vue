@@ -2,12 +2,22 @@
 import ChatLayout from '@/layouts/ChatLayout.vue'
 import ChatMessages from '@/modules/chat/components/ChatMessages.vue'
 import ChatUserList from '@/modules/chat/components/ChatUserList.vue'
+import { chat } from '@/services/api/chat'
+import { onMounted, ref } from 'vue'
+import { type ChatListItem } from '@/types'
+
+const chatList = ref<ChatListItem[]>([])
+
+onMounted(async () => {
+  const { data } = await chat.list()
+  chatList.value = data
+})
 </script>
 
 <template>
   <ChatLayout>
     <main class="chat">
-      <ChatUserList class="chat__user-list" />
+      <ChatUserList v-if="chatList.length" :chat-list="chatList" class="chat__user-list" />
       <ChatMessages class="chat__messages" />
     </main>
   </ChatLayout>
