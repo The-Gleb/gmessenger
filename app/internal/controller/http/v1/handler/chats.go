@@ -48,7 +48,7 @@ func (h *chatsHandler) Middlewares(md ...func(http.Handler) http.Handler) *chats
 var testChats []entity.Chat = []entity.Chat{
 	{
 		Type:         "dialog",
-		ReceiverID:   "2",
+		ReceiverID:   2,
 		ReceiverName: "John",
 		Unread:       10,
 		LastMessage: entity.Message{
@@ -63,7 +63,7 @@ var testChats []entity.Chat = []entity.Chat{
 	},
 	{
 		Type:         "group",
-		ReceiverID:   "123",
+		ReceiverID:   123,
 		ReceiverName: "PUNK VEGANS",
 		Unread:       0,
 		LastMessage: entity.Message{
@@ -77,7 +77,7 @@ var testChats []entity.Chat = []entity.Chat{
 		},
 	}, {
 		Type:         "group",
-		ReceiverID:   "123",
+		ReceiverID:   123,
 		ReceiverName: "Some chat",
 	},
 }
