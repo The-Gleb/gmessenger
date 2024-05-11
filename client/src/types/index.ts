@@ -29,7 +29,7 @@ export type User = {
   email: string
 }
 
-export type ChatLastMessage = {
+export type ChatMessage = {
   id: number
   receiver_id: number
   sender_id: number
@@ -40,9 +40,9 @@ export type ChatLastMessage = {
 }
 
 export type ChatListItem = {
-  reciever_id: number
+  receiver_id: number
   receiver_name: string
-  type: 'PERSONAL_CHAT' | 'DIALOG'
+  type: 'DIALOG' | 'GROUP'
   unread: number
-  last_message: ChatLastMessage
+  last_message: ChatMessage
 }
