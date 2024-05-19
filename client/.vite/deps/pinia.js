@@ -1008,7 +1008,7 @@ function createSetupStore($id, setup, options = {}, pinia, hot, isOptionsStore) 
         if (Array.isArray(debuggerEvents)) {
           debuggerEvents.push(event);
         } else {
-          console.error("🍍 debuggerEvents should be an array. This is most likely an internal Pinia bug.");
+          console.error("🍍 debuggerEvents should be an array. This is most likely an gateway Pinia bug.");
         }
       }
     };

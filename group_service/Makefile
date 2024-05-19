@@ -26,7 +26,7 @@ migratedown:
 # 	docker exec -it postgres123 dropdb simple_bank
 
 # migrateup:
-# 	migrate -path internal/adapter/db/migration -database "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable" -verbose up
+# 	migrate -path gateway/adapter/db/migration -database "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable" -verbose up
 
 # migratedown:
 # 	migrate -path db/migration -database "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable" -verbose down

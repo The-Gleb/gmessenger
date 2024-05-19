@@ -324,14 +324,14 @@ var EffectScope = class {
   }
   /**
    * This should only be called on non-detached scopes
-   * @internal
+   * @gateway
    */
   on() {
     activeEffectScope = this;
   }
   /**
    * This should only be called on non-detached scopes
-   * @internal
+   * @gateway
    */
   off() {
     activeEffectScope = this.parent;
@@ -4557,7 +4557,7 @@ var PublicInstanceProxyHandlers = {
       {
         return globalProperties[key];
       }
-    } else if (currentRenderingInstance && (!isString(key) || // #1091 avoid internal isRef/isVNode checks on component instance leading
+    } else if (currentRenderingInstance && (!isString(key) || // #1091 avoid gateway isRef/isVNode checks on component instance leading
     // to infinite warning loop
     key.indexOf("__v") !== 0)) {
       if (data !== EMPTY_OBJ && isReservedPrefix(key[0]) && hasOwn(data, key)) {
@@ -9483,7 +9483,7 @@ function initCustomFormatter() {
         {
           style: keywordStyle.style + ";opacity:0.66"
         },
-        "$ (internal): "
+        "$ (gateway): "
       ],
       ["object", { object: instance }]
     ]);
@@ -10525,13 +10525,13 @@ var VueElement = class _VueElement extends BaseClass {
     this._setProp(camelKey, value, false);
   }
   /**
-   * @internal
+   * @gateway
    */
   _getProp(key) {
     return this._props[key];
   }
   /**
-   * @internal
+   * @gateway
    */
   _setProp(key, val, shouldReflect = true, shouldUpdate = true) {
     if (val !== this._props[key]) {

@@ -27,7 +27,7 @@ services:
   #     - GROUP_DB_PASS=${GROUP_POSTGRES_PASSWORD}
   #   ports:
   #     - 8080:8080
-  #   command: go run app/cmd/main.go
+  #   command: go run app/gateway/main.go
 
   #  gateway:
   #    build: ./app
@@ -48,7 +48,7 @@ services:
   #      - LOGLEVEL=debug
   #    ports:
   #      - "8081:8081"
-  #    command: go run app/cmd/main.go
+  #    command: go run app/gateway/main.go
 
   gateway_db:
     image: postgres:alpine
@@ -69,7 +69,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./app/internal/adapter/db/migration:/migrations
+      - ./app/gateway/adapter/db/migration:/migrations
     command:
       [
         "-path",
@@ -96,7 +96,7 @@ services:
   #     - GROUP_DB_NAME=${GROUP_POSTGRES_USER}
   #     - GROUP_DB_USERNAME=${GROUP_POSTGRES_USER}
   #     - GROUP_DB_PASS=${GROUP_POSTGRES_PASSWORD}
-  #   command: go run group_service/cmd/main.go
+  #   command: go run group_service/gateway/main.go
 
   # group_service_db:
   #   image: postgres:alpine
@@ -115,7 +115,7 @@ services:
   #   env_file:
   #     - .env
   #   volumes:
-  #     - ./group_service/internal/adapter/db/migration:/migrations
+  #     - ./group_service/gateway/adapter/db/migration:/migrations
   #   command:
   #     [
   #       "-path",

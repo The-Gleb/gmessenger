@@ -33,7 +33,7 @@ enum MessageStatus{
 
 message MessageView {
     int64 id = 1;
-    string sender_login = 2;
+    int64 sender_id = 2;
     int64 group_id = 3;
     string text = 4;
     MessageStatus status = 5;
@@ -42,7 +42,7 @@ message MessageView {
 
 message CreateRequest {
     string name = 1;
-    repeated string member_logins = 2;
+    repeated int64 member_ids = 2;
 }
 
 message CreateResponse {
@@ -50,7 +50,7 @@ message CreateResponse {
 }
 
 message GetGroupsRequest {
-    string user_login = 1;
+    int64 user_id = 1;
     int32 limit = 2;
     int32 offset = 3;
 }
@@ -60,7 +60,7 @@ message GetGroupsResponse {
 }
 
 message CheckMemberRequest {
-    string user_login = 1;
+    int64 user_id = 1;
     int64 group_id = 2;
 }
 
@@ -73,11 +73,11 @@ message GetMembersRequest {
 }
 
 message GetMembersResponse {
-    repeated string member_logins = 1;
+    repeated int64 member_ids = 1;
 }
 
 message AddMessageRequest {
-    string sender_login = 1;
+    int64 sender_id = 1;
     int64 group_id = 2;
     string text = 3;
 }
