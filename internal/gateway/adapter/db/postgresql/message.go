@@ -7,6 +7,7 @@ import (
 	"github.com/The-Gleb/gmessenger/internal/gateway/errors"
 	"github.com/The-Gleb/gmessenger/pkg/client/postgresql"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"log/slog"
 )
 
@@ -77,6 +78,7 @@ func (ms *messageStorage) GetByUsers(ctx context.Context, senderID, receiverID i
 			OR (sender_id = $2 AND receiver_id = $1)
 			ORDER BY id
 			LIMIT $3 OFFSET $4;`,
+		senderID, receiverID, limit, offset,
 	)
 
 	if err != nil {
@@ -86,7 +88,9 @@ func (ms *messageStorage) GetByUsers(ctx context.Context, senderID, receiverID i
 
 	messages, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (entity.Message, error) {
 		var msg entity.Message
-		err := row.Scan(&msg.ID, &msg.SenderID, &msg.ReceiverID, &msg.Text, &msg.Status)
+		var timestamp pgtype.Timestamptz
+		err := row.Scan(&msg.ID, &msg.SenderID, &msg.ReceiverID, &msg.Text, &msg.Status, &timestamp)
+		msg.Timestamp = timestamp.Time
 		return msg, err
 	})
 	if err != nil {

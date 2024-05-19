@@ -50,7 +50,7 @@ func (us userStorage) GetOrCreateByEmail(ctx context.Context, email string) (int
 
 	row := tx.QueryRow(
 		ctx,
-		`SELECT (id) FROM users WHERE email = $1`,
+		`SELECT (id) FROM users WHERE email = $1;`,
 		email,
 	)
 
@@ -70,7 +70,7 @@ func (us userStorage) GetOrCreateByEmail(ctx context.Context, email string) (int
 		INSERT INTO users (email)
 		VALUES ($1)
 		RETURNING id;
-		`,
+		;`,
 		email,
 	)
 

@@ -52,42 +52,22 @@ func (s *messageStorage) AddMessage(ctx context.Context, message entity.Message)
 	}
 
 	return entity.Message{
-		ID:        sqlcMessage.ID,
-		GroupID:   sqlcMessage.GroupID.Int64,
-		Sender:    sqlcMessage.Sender.String,
-		Text:      sqlcMessage.Text.String,
-		Status:    sqlcMessage.Status.String,
-		Timestamp: sqlcMessage.CreatedAt.Time,
+		ID:         sqlcMessage.ID,
+		GroupID:    sqlcMessage.GroupID.Int64,
+		SenderName: sqlcMessage.Sender.String,
+		Text:       sqlcMessage.Text.String,
+		Status:     sqlcMessage.Status.String,
+		Timestamp:  sqlcMessage.CreatedAt.Time,
 	}, nil
 
 }
 
 func (s *messageStorage) GetMessages(ctx context.Context, groupID int64, limit, offset int) ([]entity.Message, error) {
 
-	sqlcMessages, err := s.sqlc.GetMessages(ctx, sqlc.GetMessagesParams{
-		GroupID: pgtype.Int8{
-			Int64: groupID,
-			Valid: true,
-		},
-		Limit:  int32(limit),
-		Offset: int32(offset),
-	})
-	if err != nil && err != pgx.ErrNoRows {
-		return nil, err
-	}
-
-	messages := make([]entity.Message, len(sqlcMessages))
-
-	for i, sqlcMsg := range sqlcMessages {
-		messages[i] = entity.Message{
-			ID:        sqlcMsg.ID,
-			GroupID:   sqlcMsg.GroupID.Int64,
-			Sender:    sqlcMsg.Sender.String,
-			Text:      sqlcMsg.Text.String,
-			Status:    sqlcMsg.Status.String,
-			Timestamp: sqlcMsg.CreatedAt.Time,
-		}
-	}
+	rows, err := s.client.Query(
+		ctx,
+		`SELECT `,
+	)
 
 	return messages, nil
 

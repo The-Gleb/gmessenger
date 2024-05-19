@@ -142,7 +142,7 @@ func (s *groupStorage) GetMemberIDs(ctx context.Context, groupID int64) ([]int64
 
 }
 
-func (s *groupStorage) GetGroups(ctx context.Context, userID int64, limit, offset int) ([]entity.GroupView, error) {
+func (s *groupStorage) GetGroupChats(ctx context.Context, userID int64, limit, offset int) ([]entity.GroupView, error) {
 
 	tx, err := s.client.Begin(ctx)
 	if err != nil {
@@ -158,7 +158,8 @@ func (s *groupStorage) GetGroups(ctx context.Context, userID int64, limit, offse
 
 	rows, err := tx.Query(
 		ctx,
-		`S`,
+		``,
+		userID,
 	)
 
 }
