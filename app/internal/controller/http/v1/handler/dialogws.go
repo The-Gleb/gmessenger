@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	dialogWSURL = "/dialog/{receiverLogin}/ws"
+	dialogWSURL = "/dialog/{receiverId}/ws"
 )
 
 type DialogWSUsecase interface {
@@ -58,25 +58,26 @@ func (h *dialogWSHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(rw, r, nil)
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(rw, "[dialogWSHandler.ServeHTTP]: couldn't get session token from context", http.StatusInternalServerError)
+		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
 	userID, ok := r.Context().Value(v1.Key("userID")).(int64)
 	if !ok {
-		slog.Error("cannot get userLogin")
+		slog.Error("cannot get userID")
 		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
-	sessionID, ok := r.Context().Value(v1.Key("session")).(int64)
+	sessionID, ok := r.Context().Value(v1.Key("sessionID")).(int64)
 	if !ok {
-		http.Error(rw, "cannot get userID from context ", http.StatusInternalServerError)
+		slog.Error("cannot get userID")
+		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
 
-	receiverID, err := strconv.ParseInt(chi.URLParam(r, "receiverID"), 10, 64)
+	receiverID, err := strconv.ParseInt(chi.URLParam(r, "receiverId"), 10, 64)
 	if err != nil {
 		slog.Error("[dialogWSHandler.ServeHTTP]: couldn't get receiverID", "error", err)
-		http.Error(rw, "", http.StatusBadRequest)
+		client.CloseWSConnection(conn, websocket.CloseInternalServerErr)
 		return
 	}
 

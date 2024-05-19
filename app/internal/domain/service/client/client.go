@@ -60,7 +60,7 @@ func (c *Client) WriteMessage() {
 				return
 			}
 
-			slog.Debug("receives message:", "msg", message)
+			slog.Debug("received event:", "senderID", c.SenderID, "sessionId", c.SessionID, "type", message.Type, "payload", string(message.Payload))
 
 			if message.Payload == nil {
 				CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
@@ -124,8 +124,6 @@ func (c *Client) ReadMessage() {
 			}
 			break
 		}
-
-		slog.Debug("sending message", "msg", string(m))
 
 		var event entity.Event
 

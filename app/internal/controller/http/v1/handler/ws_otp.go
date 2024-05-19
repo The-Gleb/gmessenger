@@ -46,9 +46,9 @@ func (handler *otpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cannot get userID from context ", http.StatusInternalServerError)
 		return
 	}
-	sessionID, ok := r.Context().Value(v1.Key("session")).(int64)
+	sessionID, ok := r.Context().Value(v1.Key("sessionID")).(int64)
 	if !ok {
-		http.Error(w, "cannot get userID from context ", http.StatusInternalServerError)
+		http.Error(w, "cannot get sessionID from context ", http.StatusInternalServerError)
 		return
 	}
 

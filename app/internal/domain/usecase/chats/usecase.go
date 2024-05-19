@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
-	"github.com/The-Gleb/gmessenger/app/pkg/proto/go/group"
+	"github.com/The-Gleb/gmessenger/app/pkg/proto/group"
 )
 
 type SessionService interface {

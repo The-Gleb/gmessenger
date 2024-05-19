@@ -179,12 +179,12 @@ func Test_groupHub_SendNewMessage(t *testing.T) {
 				if !tt.receiverConectedToTheChat {
 					room := &Room{
 						ID:      tt.client2.GroupID,
-						Clients: make(map[string]ClientSessions),
+						Clients: make(map[string]clientSessions),
 					}
 					hub.Rooms[tt.client2.GroupID] = room
 
 				}
-				clientSessions := make(ClientSessions)
+				clientSessions := make(clientSessions)
 				hub.Rooms[tt.client2.GroupID].Clients[tt.client2.SenderLogin] = clientSessions
 				clientSessions[tt.client2.SessionToken] = tt.client2
 			}

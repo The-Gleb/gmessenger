@@ -21,7 +21,7 @@ import (
 	handlers "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/handler"
 	middlewares "github.com/The-Gleb/gmessenger/app/internal/controller/http/v1/middleware"
 	db "github.com/The-Gleb/gmessenger/app/pkg/client/postgresql"
-	"github.com/The-Gleb/gmessenger/app/pkg/proto/go/group"
+	"github.com/The-Gleb/gmessenger/app/pkg/proto/group"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -70,7 +70,7 @@ func main() {
 	dialogWSService := service.NewDialogService(messageStorage)
 	pasetoAuthService, err := service.NewPaseto(make([]byte, 32), time.Duration(24)*time.Hour)
 	groupHub := service.NewGroupHub(groupClient)
-	otpService := service.NewOtpService()
+	otpService := service.NewOtpService(30 * time.Hour)
 
 	loginUsecase := login_usecase.NewLoginUsecase(userService, pasetoAuthService, sessionService)
 	registerUsecase := register_usecase.NewRegisterUsecase(userService, pasetoAuthService, sessionService)
@@ -96,6 +96,7 @@ func main() {
 	setUsernameHandler := handlers.NewSetUsernameHandler(setUsernameUsecase)
 	oauthHandler := handlers.NewOAuthHandler(oauthUsecase)
 	userInfoHandler := handlers.NewUserInfoHandler(userService)
+	otpHandler := handlers.NewOtpHandler(otpService)
 
 	r := chi.NewRouter()
 
@@ -110,11 +111,12 @@ func main() {
 	registerHandler.Middlewares(corsMiddleware.AllowCors).AddToRouter(r)
 	chatsHandler.Middlewares(corsMiddleware.AllowCors, authMiddleWare.Http).AddToRouter(r)
 	dialogMsgsHandler.Middlewares(corsMiddleware.AllowCors, authMiddleWare.Http).AddToRouter(r)
-	dialogWSHandler.Middlewares(authMiddleWare.Websocket, corsMiddleware.AllowCors).AddToRouter(r)
+	dialogWSHandler.Middlewares(authMiddleWare.Websocket).AddToRouter(r)
 	groupMsgsHandler.Middlewares(corsMiddleware.AllowCors, authMiddleWare.Http).AddToRouter(r)
 	groupWSHandler.Middlewares(authMiddleWare.Websocket, corsMiddleware.AllowCors).AddToRouter(r)
 	setUsernameHandler.Middlewares(corsMiddleware.AllowCors, authMiddleWare.Http).AddToRouter(r)
 	userInfoHandler.Middlewares(corsMiddleware.AllowCors, authMiddleWare.Http).AddToRouter(r)
+	otpHandler.Middlewares(corsMiddleware.AllowCors, authMiddleWare.Http).AddToRouter(r)
 	oauthHandler.AddToRouter(r)
 
 	s := http.Server{

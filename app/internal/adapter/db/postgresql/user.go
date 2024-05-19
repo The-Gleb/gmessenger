@@ -281,7 +281,7 @@ func (us userStorage) GetChatsView(ctx context.Context, userID int64) ([]entity.
 	tx, err := us.client.Begin(ctx)
 	if err != nil {
 		slog.Error(err.Error())
-		return nil, errors.NewDomainError(errors.ErrDB, "[storage.GetChatsView]")
+		return nil, errors.NewDomainError(errors.ErrDB, "[userStorage.GetChatsView]")
 	}
 	defer func() {
 		err = tx.Rollback(ctx)

@@ -9,7 +9,7 @@ import (
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
-	"github.com/The-Gleb/gmessenger/app/pkg/proto/go/group"
+	"github.com/The-Gleb/gmessenger/app/pkg/proto/group"
 	"github.com/gorilla/websocket"
 )
 
@@ -36,7 +36,7 @@ func NewGroupHub(gc group.GroupClient) *groupHub {
 func (gh *groupHub) AddClient(c *client.Client) {
 
 	resp, err := gh.GroupClient.CheckMember(context.TODO(), &group.CheckMemberRequest{
-		//UserID: c.SenderID, // TODO: regenerate proto files
+		UserId:  c.SenderID,
 		GroupId: c.GroupID,
 	})
 	if err != nil {
@@ -124,9 +124,9 @@ func (gh *groupHub) SendNewMessage(event entity.Event, senderClient *client.Clie
 	}
 
 	addMessageResponse, err := gh.GroupClient.AddMessage(context.TODO(), &group.AddMessageRequest{
-		//SenderID: senderClient.SenderID, // TODO: regenerate proto
-		GroupId: senderClient.GroupID,
-		Text:    chatevent.Text,
+		SenderId: senderClient.SenderID,
+		GroupId:  senderClient.GroupID,
+		Text:     chatevent.Text,
 	})
 	if err != nil {
 		client.CloseWSConnection(senderClient.Conn, websocket.CloseInternalServerErr)
@@ -137,10 +137,10 @@ func (gh *groupHub) SendNewMessage(event entity.Event, senderClient *client.Clie
 	newMessage := addMessageResponse.GetMessage()
 
 	newMessageEvent := entity.NewMessageEvent{
-		ID: newMessage.GetId(),
-		//SenderID: newMessage.GetSenderID(), // TODO: regenerate proto
-		Status: newMessage.GetStatus().String(),
-		Text:   newMessage.GetText(),
+		ID:       newMessage.GetId(),
+		SenderID: newMessage.GetSenderId(),
+		Status:   newMessage.GetStatus().String(),
+		Text:     newMessage.GetText(),
 	}
 
 	data, err := json.Marshal(newMessageEvent)

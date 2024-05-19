@@ -91,9 +91,9 @@ func (m *authMiddleWare) Websocket(next http.Handler) http.Handler {
 			http.Error(w, string(errors.ErrNotAuthenticated), http.StatusUnauthorized)
 			return
 		}
-
+		slog.Debug("got otp data", "data", data)
 		ctx := context.WithValue(r.Context(), Key("userID"), data.UserID)
-		ctx = context.WithValue(r.Context(), Key("sessionID"), data.SessionID)
+		ctx = context.WithValue(ctx, Key("sessionID"), data.SessionID)
 
 		r = r.WithContext(ctx)
 

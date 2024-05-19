@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
-	"strings"
 	"sync"
+	"time"
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/service/client"
@@ -15,7 +15,7 @@ import (
 type dialogService struct {
 	ClientList     map[int64]ClientSessions
 	messageStorage MessageStorage
-	mu             sync.RWMutex
+	mu             sync.Mutex
 }
 
 func NewDialogService(ms MessageStorage) *dialogService {
@@ -68,25 +68,26 @@ func (ds *dialogService) RouteEvent(event entity.Event, senderClient *client.Cli
 
 func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 
-	slog.Info(string(event.Payload))
+	slog.Info("got event", "payload", string(event.Payload))
 
-	p := strings.Trim(string(event.Payload), "\"")
-	p = strings.ReplaceAll(p, "\\", "")
-	slog.Info(p)
+	//p := strings.Trim(string(event.Payload), "\"")
+	//p = strings.ReplaceAll(p, "\\", "")
+	//slog.Info(p)
 
 	var chatevent entity.SendMessageEvent
-	if err := json.Unmarshal([]byte(p), &chatevent); err != nil {
+	if err := json.Unmarshal(event.Payload, &chatevent); err != nil {
 		client.CloseWSConnection(c.Conn, websocket.CloseInvalidFramePayloadData)
 		slog.Error("cannot unmarshal json to SendDialogMessageEvent", "error", err.Error())
 		return
 	}
+	slog.Debug("decoded payload", "chatEvent", chatevent)
 
 	newMessage, err := ds.messageStorage.Create(context.TODO(), entity.Message{
 		SenderID:   c.SenderID,
 		ReceiverID: c.ReceiverID,
 		Text:       chatevent.Text,
 		Status:     entity.SENT,
-		// Timestamp: time.Now(),
+		Timestamp:  time.Now(),
 	})
 	if err != nil {
 		client.CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
@@ -94,15 +95,15 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 		return
 	}
 
-	var messageToSend entity.NewMessageEvent
+	//var messageToSend entity.NewMessageEvent
+	//
+	//messageToSend.ID = newMessage.ID
+	//messageToSend.Status = newMessage.Status
+	//messageToSend.Text = newMessage.Text
+	//messageToSend.SenderID = newMessage.SenderID
+	//messageToSend.CreatedAt = newMessage.Timestamp
 
-	messageToSend.ID = newMessage.ID
-	messageToSend.Status = newMessage.Status
-	messageToSend.Text = newMessage.Text
-	messageToSend.SenderID = newMessage.SenderID
-	messageToSend.CreatedAt = newMessage.Timestamp
-
-	data, err := json.Marshal(messageToSend)
+	data, err := json.Marshal(newMessage)
 	if err != nil {
 		client.CloseWSConnection(c.Conn, websocket.CloseInternalServerErr)
 		slog.Error(err.Error())
@@ -114,10 +115,10 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 	outgoingEvent.Payload = data
 	outgoingEvent.Type = entity.NewMessage
 
-	ds.mu.RLock()
-	for _, client := range ds.ClientList[c.SenderID] {
-		client.Message <- outgoingEvent
-	}
+	ds.mu.Lock()
+	//for _, c := range ds.ClientList[c.SenderID] {
+	//	c.Message <- outgoingEvent
+	//}
 
 	receiverSessions, ok := ds.ClientList[c.ReceiverID]
 	if !ok || len(receiverSessions) == 0 {
@@ -158,5 +159,5 @@ func (ds *dialogService) SendNewMessage(event entity.Event, c *client.Client) {
 
 	}
 
-	ds.mu.RUnlock()
+	ds.mu.Unlock()
 }

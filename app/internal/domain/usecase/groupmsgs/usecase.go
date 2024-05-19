@@ -6,7 +6,7 @@ import (
 
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
 	"github.com/The-Gleb/gmessenger/app/internal/errors"
-	"github.com/The-Gleb/gmessenger/app/pkg/proto/go/group"
+	"github.com/The-Gleb/gmessenger/app/pkg/proto/group"
 )
 
 type groupMsgsUsecase struct {
@@ -22,8 +22,8 @@ func NewGroupMsgsUsecase(gc group.GroupClient) *groupMsgsUsecase {
 func (u *groupMsgsUsecase) GetGroupMessages(ctx context.Context, dto GetGroupMessagesDTO) ([]entity.Message, error) {
 
 	isMemberResp, err := u.groupClient.CheckMember(ctx, &group.CheckMemberRequest{
-		UserLogin: dto.UserLogin,
-		GroupId:   dto.GroupID,
+		UserId:  dto.UserId,
+		GroupId: dto.GroupID,
 	})
 
 	if err != nil {
@@ -32,7 +32,7 @@ func (u *groupMsgsUsecase) GetGroupMessages(ctx context.Context, dto GetGroupMes
 	}
 
 	if !isMemberResp.GetIsMember() {
-		slog.Error("client is not a member of this chat", "userLogin", dto.UserLogin, "group ID", dto.GroupID)
+		slog.Error("client is not a member of this chat", "userLogin", dto.UserId, "group ID", dto.GroupID)
 		return []entity.Message{}, errors.NewDomainError(errors.ErrNotAMember, "")
 	}
 

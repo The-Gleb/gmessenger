@@ -3,6 +3,9 @@ package postgresql
 import (
 	"context"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/service"
+	"github.com/The-Gleb/gmessenger/app/internal/errors"
+	"log/slog"
+
 	// stdErrors "errors"
 	"github.com/The-Gleb/gmessenger/app/internal/adapter/db/sqlc"
 	"github.com/The-Gleb/gmessenger/app/internal/domain/entity"
@@ -50,6 +53,22 @@ func (ms *messageStorage) GetByID(ctx context.Context, msgID int64) (entity.Mess
 }
 
 func (ms *messageStorage) Create(ctx context.Context, msg entity.Message) (entity.Message, error) {
+
+	row := ms.client.QueryRow(
+		ctx,
+		`INSERT INTO messages (sender_id, receiver_id, text, status, created_at) VALUES ($1, $2, $3, $4,$5)
+		RETURNING id;`,
+		msg.SenderID, msg.ReceiverID, msg.Text, msg.Status, msg.Timestamp,
+	)
+
+	var id int64
+	err := row.Scan(&id)
+	if err != nil {
+		slog.Error(err.Error())
+		return entity.Message{}, errors.NewDomainError(errors.ErrDB, "[messageStorage.Create]")
+	}
+	msg.ID = id
+	return msg, nil
 
 	//m, err := ms.sqlc.CreateMessage(ctx, sqlc.CreateMessageParams{
 	//	Sender: pgtype.Text{

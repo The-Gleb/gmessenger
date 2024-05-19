@@ -91,8 +91,8 @@ func (h *dialogMsgsHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	userID, ok := r.Context().Value(v1.Key("userID")).(int64)
 	if !ok {
-		slog.Error("cannot get userLogin")
-		http.Error(rw, "cannot get userLogin", http.StatusInternalServerError)
+		slog.Error("cannot get user ID")
+		http.Error(rw, "cannot get user ID", http.StatusInternalServerError)
 		return
 	}
 	// token, ok := r.Context().Value("token").(string)
