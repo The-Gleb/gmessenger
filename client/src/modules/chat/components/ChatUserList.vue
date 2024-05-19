@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { type ChatListItem } from '@/types'
 
 type Props = {
   chatList: ChatListItem[]
+  currentChatId: number
 }
 
-const props = defineProps<Props>()
-
-const currentChatId = ref(props.chatList[0].reciever_id)
+defineProps<Props>()
 </script>
 
 <template>
@@ -19,8 +17,8 @@ const currentChatId = ref(props.chatList[0].reciever_id)
     <div class="chat-user-list__content">
       <button
         v-for="item in chatList"
-        :key="item.reciever_id"
-        :class="['chat-user-list-item', { 'chat-user-list-item_active': item.reciever_id === currentChatId }]"
+        :key="item.receiver_id"
+        :class="['chat-user-list-item', { 'chat-user-list-item_active': item.receiver_id === currentChatId }]"
       >
         <img class="chat-user-list-item__avatar" src="@/assets/img/avatar.png" />
         <div class="chat-user-list-item__body">
