@@ -124,9 +124,10 @@ func (gh *groupHub) SendNewMessage(event entity.Event, senderClient *client.Clie
 	}
 
 	addMessageResponse, err := gh.GroupClient.AddMessage(context.TODO(), &group.AddMessageRequest{
-		SenderId: senderClient.SenderID,
-		GroupId:  senderClient.GroupID,
-		Text:     chatevent.Text,
+		SenderId:   senderClient.SenderID,
+		SenderName: senderClient.SenderName,
+		GroupId:    senderClient.GroupID,
+		Text:       chatevent.Text,
 	})
 	if err != nil {
 		client.CloseWSConnection(senderClient.Conn, websocket.CloseInternalServerErr)

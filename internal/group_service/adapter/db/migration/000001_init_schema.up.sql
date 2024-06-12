@@ -1,6 +1,7 @@
 CREATE TABLE "messages" (
   "id" bigserial PRIMARY KEY,
   "sender_id" varchar,
+    "sender_name" varchar,
   "group_id" bigserial,
   "text" text,
   "status" varchar,

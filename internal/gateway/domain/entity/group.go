@@ -7,6 +7,6 @@ type Group struct {
 }
 
 type CreateGroupDTO struct {
-	Name      string
-	MemberIDs []int64
+	Name      string  `form:"name"`
+	MemberIDs []int64 `form:"member_ids"`
 }
