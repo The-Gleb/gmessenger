@@ -29,7 +29,7 @@ func (h *yandexGPTHandler) AddToRouter(r *chi.Mux) {
 
 	r.Route(yandexGptURL, func(r chi.Router) {
 		r.Use(h.middlewares...)
-		r.Get("/", h.ServeHTTP)
+		r.Post("/", h.ServeHTTP)
 	})
 
 	// var handler http.Handler
@@ -48,7 +48,7 @@ func (h *yandexGPTHandler) Middlewares(md ...func(http.Handler) http.Handler) *y
 func (h *yandexGPTHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	slog.Debug("yandexGPTHandler working")
 	var dto struct {
-		text string
+		Text string `json:"text"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&dto)
@@ -57,17 +57,15 @@ func (h *yandexGPTHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "decode json error", http.StatusBadRequest)
 		return
 	}
-	slog.Debug("got message", "text", dto.text)
 
-	response, err := h.client.SendMessage(r.Context(), dto.text)
+	response, err := h.client.SendMessage(r.Context(), dto.Text)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	slog.Debug("got response", "text", response)
 
-	dto.text = response
+	dto.Text = response
 
 	b, err := json.Marshal(dto)
 	if err != nil {
