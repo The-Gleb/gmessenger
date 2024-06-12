@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	storage "github.com/The-Gleb/gmessenger/internal/gateway/adapter/db/postgresql"
+	"github.com/The-Gleb/gmessenger/internal/gateway/adapter/yandexgpt"
 	"github.com/The-Gleb/gmessenger/internal/gateway/config"
 	handlers "github.com/The-Gleb/gmessenger/internal/gateway/controller/http/v1/handler"
 	middlewares "github.com/The-Gleb/gmessenger/internal/gateway/controller/http/v1/middleware"
@@ -37,6 +38,12 @@ import (
 	"time"
 )
 
+var (
+	catalogID = "b1glna78gcervi580uvp"
+	keyId     = "ajeig6h7umsuu4q5ljte"
+	apiKey    = "AQVN0oGif1ue8TRaz65Zacw4LcQDX67iH6rrlVbo"
+)
+
 func main() {
 	cfg := config.MustBuild("config")
 	logger.Initialize(cfg.LogLevel)
@@ -60,6 +67,8 @@ func main() {
 	userStorage := storage.NewUserStorage(dbClient)
 	sessionStorage := storage.NewSessionStorage(dbClient)
 	messageStorage := storage.NewMessageStorage(dbClient)
+
+	yandexGptClient := yandexgpt.NewYandexGPTClient(catalogID, apiKey)
 
 	userService := service.NewUserService(userStorage)
 	sessionService := service.NewSessionService(sessionStorage, time.Duration(24)*time.Hour)
@@ -96,6 +105,7 @@ func main() {
 	userInfoHandler := handlers.NewUserInfoHandler(userService)
 	otpHandler := handlers.NewOtpHandler(otpService)
 	creatGroupHandler := handlers.NewCreateGroupHandler(createGroupUsecase)
+	yandexGPTHandler := handlers.NewYandexGTPHandler(yandexGptClient)
 
 	r := chi.NewRouter()
 
@@ -117,6 +127,7 @@ func main() {
 	userInfoHandler.Middlewares(corsMiddleware.AllowCors, authMiddleWare.Http).AddToRouter(r)
 	otpHandler.Middlewares(corsMiddleware.AllowCors, authMiddleWare.Http).AddToRouter(r)
 	creatGroupHandler.Middlewares(corsMiddleware.AllowCors, authMiddleWare.Http).AddToRouter(r)
+	yandexGPTHandler.AddToRouter(r)
 	oauthHandler.AddToRouter(r)
 
 	s := http.Server{
